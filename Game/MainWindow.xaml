@@ -5,8 +5,92 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Game"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="Editor_v0.1" Height="520" Width="900">
+    <Grid Margin="8">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="12"/>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="7"/>
+            <ColumnDefinition Width="96"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
+        <!-- Заголовок -->
+        <TextBlock Grid.Column="0"
+                   FontWeight="Bold" FontSize="14"
+                   Text="Editor_v0.1"
+                   HorizontalAlignment="Left"
+                   Margin="2,0,0,8" Width="73"/>
+
+        <!-- Список врагов -->
+        <GroupBox Header="List of enemies:" Grid.Row="1" Grid.Column="0">
+            <DockPanel Margin="4">
+                <ListBox>
+                    <ListBoxItem>1</ListBoxItem>
+                    <ListBoxItem>12</ListBoxItem>
+                    <ListBoxItem>123</ListBoxItem>
+                </ListBox>
+            </DockPanel>
+        </GroupBox>
+
+        <!-- Центр -->
+        <Grid Grid.Row="1" Grid.Column="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="160"/>
+                <ColumnDefinition Width="12"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Превью иконки -->
+            <StackPanel Grid.Column="0" VerticalAlignment="Top">
+                <TextBlock Text="Enemy icon:" FontWeight="Bold" Margin="0,0,0,6"/>
+                <Border BorderBrush="Gray" BorderThickness="1"
+                        Width="150" Height="150" Background="White">
+                    <Image Stretch="Uniform"/>
+                </Border>
+            </StackPanel>
+
+            <!-- Параметры -->
+            <StackPanel Grid.Column="2" VerticalAlignment="Top">
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                    <TextBlock Width="120">Icon name:</TextBlock>
+                    <TextBox Width="200" Text="Armored"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                    <TextBlock Width="120">Enemy Name:</TextBlock>
+                    <TextBox Width="200" Text="Enemy"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                    <TextBlock Width="120"><Run Text="Base life:"/></TextBlock>
+                    <TextBox Width="80" Text="12"/>
+                    <TextBlock Width="60"><Run Text="Base gold:"/></TextBlock>
+                    <TextBox Width="80" Text="15"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                    <TextBlock Width="120">Life modifier:</TextBlock>
+                    <TextBox Width="80" Text="54"/>
+                    <TextBlock Width="60">Gold modifier:</TextBlock>
+                    <TextBox Width="80" Text="67"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                    <TextBlock Width="180">Spawn chance (1-100):</TextBlock>
+                    <TextBox Width="80" Text="13"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                    <Button Content="Add" Width="90" />
+                    <Button Content="Remove" Width="90" Margin="8,0,0,0" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Window>
