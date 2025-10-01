@@ -11,12 +11,7 @@ namespace ClickerGame.Models
         [JsonInclude] private double lifeModifier;
 
         [JsonInclude] private int baseGold;
-        [JsonInclude] private double doubleGoldModifier;
-        [JsonInclude] private double goldModifier
-        {
-            get => doubleGoldModifier;
-            set => doubleGoldModifier = value;
-        }
+        [JsonInclude] private double goldModifier;
 
         [JsonInclude] private double spawnChance;
 
@@ -30,7 +25,7 @@ namespace ClickerGame.Models
             this.baseLife = baseLife;
             this.lifeModifier = lifeModifier;
             this.baseGold = baseGold;
-            this.doubleGoldModifier = goldModifier;
+            this.goldModifier = goldModifier;
             this.spawnChance = spawnChance;
         }
 
@@ -39,10 +34,10 @@ namespace ClickerGame.Models
         public int BaseLife => baseLife;
         public double LifeModifier => lifeModifier;
         public int BaseGold => baseGold;
-        public double GoldModifier => doubleGoldModifier;
+        public double GoldModifier => goldModifier;
         public double SpawnChance => spawnChance;
 
         public double GetEffectiveLife() => baseLife * lifeModifier;
-        public double GetEffectiveGold() => baseGold * doubleGoldModifier;
+        public double GetEffectiveGold() => baseGold * goldModifier;
     }
 }
