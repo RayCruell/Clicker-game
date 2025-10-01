@@ -24,7 +24,7 @@ namespace ClickerGame.Models
             Width = width;
             Height = height;
             ImagePath = imagePath ?? throw new ArgumentNullException(nameof(imagePath));
-            Name = System.IO.Path.GetFileNameWithoutExtension(imagePath);
+            Name = Path.GetFileNameWithoutExtension(imagePath);
             CreateRectangle();
         }
 
