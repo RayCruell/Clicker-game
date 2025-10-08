@@ -1,70 +1,77 @@
 using System;
-using System.IO;
-using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace ClickerGame.Models
+namespace Game
 {
     public class Icon
     {
-        [JsonInclude] public string Name { get; private set; }
-        [JsonInclude] public int Width { get; private set; }
-        [JsonInclude] public int Height { get; private set; }
-        [JsonInclude] public string ImagePath { get; private set; }
-        [JsonInclude] public double PosX { get; private set; } = 0;
-        [JsonInclude] public double PosY { get; private set; } = 0;
+        public string Name { get; private set; }
+        public string ImagePath { get; set; }
+        private int iconWidth;                                  
+        private int iconHeight;                                  
+        private Point position;                                     
+        private Rectangle icon;                                      
 
-        [JsonIgnore] public Rectangle Rectangle { get; private set; }
-
-        public Icon(int width, int height, string imagePath)
+        public Icon(int iconWidth,
+                    int iconHeight,
+                    string imagePath)
         {
-            Width = width;
-            Height = height;
-            ImagePath = imagePath ?? throw new ArgumentNullException(nameof(imagePath));
-            Name = Path.GetFileNameWithoutExtension(imagePath);
-            CreateRectangle();
+            this.iconWidth = iconWidth;
+            this.iconHeight = iconHeight;
+            this.position = new Point(0, 0);
+            this.Name = System.IO.Path.GetFileNameWithoutExtension(imagePath);
+
+            icon = new Rectangle();
+            icon.Stroke = Brushes.Black;
+
+            ImageBrush brush = new ImageBrush();
+            brush.AlignmentX = AlignmentX.Left;
+            brush.AlignmentY = AlignmentY.Top;
+            brush.ImageSource = new BitmapImage(new Uri(imagePath, UriKind.Absolute));
+
+            icon.Fill = brush;
+            icon.RenderTransform = new TranslateTransform(position.X, position.Y);
+            icon.HorizontalAlignment = HorizontalAlignment.Left;
+            icon.VerticalAlignment = VerticalAlignment.Top;
+            icon.Width = iconWidth;
+            icon.Height = iconHeight;
         }
 
-        public void CreateRectangle()
+        public string GetName() => Name;                            
+        public double X() => position.X;                             
+        public double Y() => position.Y;                           
+        public int GetIconWidth() => iconWidth;                    
+        public int GetIconHeight() => iconHeight;                  
+        public Rectangle GetIcon() => icon;                    
+
+        public void SetPosition(Point newPosition)
         {
-            var rect = new Rectangle
+            position = newPosition;
+            icon.RenderTransform = new TranslateTransform(position.X, position.Y);
+        }
+
+        public bool IsMouseOver(Point mousePosition)
+        {
+            return mousePosition.X >= position.X &&
+                   mousePosition.X <= position.X + iconWidth &&
+                   mousePosition.Y >= position.Y &&
+                   mousePosition.Y <= position.Y + iconHeight;
+        }
+
+        public Rectangle CloneIcon()
+        {
+            Rectangle clone = new Rectangle
             {
-                Width = Width,
-                Height = Height,
-                Stroke = Brushes.Black
+                Width = icon.Width,
+                Height = icon.Height,
+                Fill = icon.Fill,
+                Stroke = icon.Stroke
             };
-
-            try
-            {
-                var ib = new ImageBrush();
-                ib.ImageSource = new BitmapImage(new Uri(ImagePath, UriKind.Absolute));
-                ib.Stretch = Stretch.Fill;
-                rect.Fill = ib;
-            }
-            catch
-            {
-                rect.Fill = Brushes.LightGray;
-            }
-
-            rect.RenderTransform = new TranslateTransform(PosX, PosY);
-            Rectangle = rect;
-        }
-
-        public void SetPosition(double x, double y)
-        {
-            PosX = x;
-            PosY = y;
-            if (Rectangle != null)
-                Rectangle.RenderTransform = new TranslateTransform(PosX, PosY);
-        }
-
-        public bool ContainsPoint(Point canvasPoint)
-        {
-            return canvasPoint.X >= PosX && canvasPoint.X <= PosX + Width
-                && canvasPoint.Y >= PosY && canvasPoint.Y <= PosY + Height;
+            clone.RenderTransform = new TranslateTransform(position.X, position.Y);
+            return clone;
         }
     }
 }
