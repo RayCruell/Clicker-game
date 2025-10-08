@@ -1,39 +1,29 @@
+using System;
 using System.Text.Json.Serialization;
-
-namespace ClickerGame.Models
+namespace Game
 {
     public class EnemyTemplate
     {
-        [JsonInclude] private string name;
-        [JsonInclude] private string iconName;
-        [JsonInclude] private int baseLife;
-        [JsonInclude] private double lifeModifier;
-        [JsonInclude] private int baseGold;
-        [JsonInclude] private double goldModifier;
-        [JsonInclude] private double spawnChance;
+        [JsonInclude] public string Name { get; private set; }         
+        [JsonInclude] public string IconName { get; private set; }    
+        [JsonInclude] public int BaseLife { get; private set; }         
+        [JsonInclude] public double LifeModifier { get; private set; }  
+        [JsonInclude] public int BaseGold { get; private set; }       
+        [JsonInclude] public double GoldModifier { get; private set; }  
+        [JsonInclude] public double SpawnChance { get; private set; }  
 
-        public EnemyTemplate(string name, string iconName,
-                             int baseLife, double lifeModifier,
-                             int baseGold, double goldModifier,
-                             double spawnChance)
+        public EnemyTemplate(string name, string iconName, int baseLife, double lifeModifier,
+                             int baseGold, double goldModifier, double spawnChance)
         {
-            this.name = name;
-            this.iconName = iconName;
-            this.baseLife = baseLife;
-            this.lifeModifier = lifeModifier;
-            this.baseGold = baseGold;
-            this.goldModifier = goldModifier;
-            this.spawnChance = spawnChance;
+            Name = name;                 
+            IconName = iconName;      
+            BaseLife = baseLife; 
+            LifeModifier = lifeModifier; 
+            BaseGold = baseGold;         
+            GoldModifier = goldModifier; 
+            SpawnChance = spawnChance;   
         }
 
-        public string Name => name;
-        public string IconName => iconName;
-        public int BaseLife => baseLife;
-        public double LifeModifier => lifeModifier;
-        public int BaseGold => baseGold;
-        public double GoldModifier => goldModifier;
-        public double SpawnChance => spawnChance;
-
-
+        public EnemyTemplate() { }
     }
 }

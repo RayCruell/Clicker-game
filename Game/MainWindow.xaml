@@ -38,6 +38,9 @@
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
 
+            <Canvas x:Name="scene" Grid.Row="1" Grid.Column="1" Background="Transparent" Margin="10,0,10,0" />
+
+
             <!-- Иконка врага слева, имя иконки и имя врага справа от неё -->
             <StackPanel Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Center" Height="172" Width="150">
                 <TextBlock Text="Enemy icon:" FontWeight="Bold" FontSize="18" Margin="0,0,0,6" HorizontalAlignment="Center"/>
@@ -87,22 +90,33 @@
         <!-- Пролистываемые иконки справа (2 иконки в ряд) -->
         <Border Grid.Column="2" BorderBrush="LightGray" BorderThickness="1" CornerRadius="4" Padding="6" Margin="0,0,0,0">
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                <ItemsControl x:Name="IconsPanel" Height="455" Width="208">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <WrapPanel Orientation="Horizontal" ItemWidth="96" ItemHeight="96"/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Button Width="92" Height="92" Margin="4" Padding="2">
-                                <StackPanel>
-                                    <Image Source="{Binding}" Width="80" Height="64" Stretch="Uniform"/>
-                                </StackPanel>
-                            </Button>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                <Border Grid.Column="2" BorderBrush="LightGray" BorderThickness="1" CornerRadius="4" Padding="6" Margin="0">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <ItemsControl x:Name="IconsPanel">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Top"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Viewbox Width="100" Height="100" Margin="4">
+                                        <Button Click="IconButton_Click"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Padding="0">
+                                            <Image Source="{Binding ImagePath}" 
+                                   Stretch="Uniform"
+                                   SnapsToDevicePixels="True"/>
+                                        </Button>
+                                    </Viewbox>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Border>
             </ScrollViewer>
         </Border>
     </Grid>

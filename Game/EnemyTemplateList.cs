@@ -2,49 +2,98 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
-namespace ClickerGame.Models
+namespace Game
 {
     public class EnemyTemplateList
     {
-        private readonly List<EnemyTemplate> enemies = new List<EnemyTemplate>();
+        [JsonInclude] private List<EnemyTemplate> enemies; 
 
-        public IReadOnlyList<EnemyTemplate> Enemies => enemies.AsReadOnly();
-
-        public void Add(EnemyTemplate e) => enemies.Add(e);
-        public bool Remove(EnemyTemplate e) => enemies.Remove(e);
-        public void Clear() => enemies.Clear();
-
-        public void SaveToFile(string filePath)
+        public EnemyTemplateList()
         {
-            var options = new JsonSerializerOptions { WriteIndented = true };
-            string json = JsonSerializer.Serialize(enemies, options);
-            File.WriteAllText(filePath, json);
+            enemies = new List<EnemyTemplate>(); 
         }
 
-        public void LoadFromFile(string filePath)
+        public void AddEnemy(string name, string icon, int baseLife, double lifeModifier,
+                     int baseGold, double goldModifier, double spawnChance)
         {
-            if (!File.Exists(filePath)) throw new FileNotFoundException(filePath);
-            enemies.Clear();
-            string json = File.ReadAllText(filePath);
-            var docs = JsonDocument.Parse(json);
-            foreach (var el in docs.RootElement.EnumerateArray())
+            if (enemies.Any(e => e.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
             {
-                try
-                {
-                    string name = el.GetProperty("name").GetString();
-                    string iconName = el.GetProperty("iconName").GetString();
-                    int baseLife = el.GetProperty("baseLife").GetInt32();
-                    double lifeModifier = el.GetProperty("lifeModifier").GetDouble();
-                    int baseGold = el.GetProperty("baseGold").GetInt32();
-                    double goldModifier = el.GetProperty("goldModifier").GetDouble();
-                    double spawnChance = el.GetProperty("spawnChance").GetDouble();
-
-                    var enemy = new EnemyTemplate(name, iconName, baseLife, lifeModifier, baseGold, goldModifier, spawnChance);
-                    enemies.Add(enemy);
-                }
-                catch { continue; }
+                throw new InvalidOperationException($"Враг с именем '{name}' уже существует!");
             }
+            enemies.Add(new EnemyTemplate(name, icon, baseLife, lifeModifier, baseGold, goldModifier, spawnChance));
         }
+
+        public EnemyTemplate GetEnemyByName(string name)
+        {
+            foreach (var enemy in enemies)
+                if (enemy.Name == name) 
+                    return enemy;
+            return null;
+        }
+
+        public EnemyTemplate GetEnemyByIndex(int id)
+        {
+            if (id >= 0 && id < enemies.Count)
+                return enemies[id];
+            return null;
+        }
+
+        public void DeleteEnemyByName(string name)
+        {
+            enemies.RemoveAll(e => e.Name == name); 
+        }
+
+        public void DeleteEnemyByIndex(int id)
+        {
+            if (id >= 0 && id < enemies.Count)
+                enemies.RemoveAt(id); 
+        }
+
+        public List<string> GetListOfEnemyNames()
+        {
+            List<string> names = new List<string>();
+            foreach (var enemy in enemies)
+                names.Add(enemy.Name);
+            return names;
+        }
+
+        public void SaveToJson(string path)
+        {
+            string jsonString = JsonSerializer.Serialize(enemies, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(path, jsonString);
+        }
+
+        public void LoadFromJson(string path)
+        {
+            if (!File.Exists(path))
+                return;
+
+            string jsonFromFile = File.ReadAllText(path);
+            List<EnemyTemplate> loadedEnemies = new List<EnemyTemplate>();
+
+            JsonDocument doc = JsonDocument.Parse(jsonFromFile);
+            foreach (JsonElement element in doc.RootElement.EnumerateArray())
+            {
+                string name = element.GetProperty("Name").GetString();
+                string iconName = element.GetProperty("IconName").GetString();
+                int baseLife = element.GetProperty("BaseLife").GetInt32();
+                double lifeModifier = element.GetProperty("LifeModifier").GetDouble();
+                int baseGold = element.GetProperty("BaseGold").GetInt32();
+                double goldModifier = element.GetProperty("GoldModifier").GetDouble();
+                double spawnChance = element.GetProperty("SpawnChance").GetDouble();
+
+                EnemyTemplate enemy = new EnemyTemplate(name, iconName, baseLife, lifeModifier, baseGold, goldModifier, spawnChance);
+                loadedEnemies.Add(enemy);
+            }
+
+            enemies = loadedEnemies; 
+        }
+        public EnemyTemplate FindByName(string name)
+        {
+            return enemies.FirstOrDefault(e => e.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        }
+
     }
 }
