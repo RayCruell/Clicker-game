@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Game
 {
-    internal class BigNumber
+    public class BigNumber
     {
         //Атрибуты класса
         private readonly int[] number;
@@ -18,11 +18,11 @@ namespace Game
         //Конструктор
         public BigNumber(string value)
         {
-            value = value.Trim().TrimStart('0');
+            value = value.Trim().TrimStart('0'); //Убираем пробелы и нули
             if (value.Length == 0)
                 value = "0";
 
-            int len = (value.Length + 2) / 3;
+            int len = (value.Length + 2) / 3; //Вычисляем число блоков
             number = new int[len];
             int index = 0;
 
@@ -40,14 +40,14 @@ namespace Game
         }
 
         //Методы
-        public BigNumber Clone()
+        public BigNumber Clone() //Клонирование
         {
             int[] copy = new int[number.Length];
             Array.Copy(number, copy, number.Length);
             return new BigNumber(copy);
         }
 
-        public override string ToString()
+        public override string ToString() //Переделываем в строку
         {
             StringBuilder sb = new StringBuilder();
             for (int i = number.Length - 1; i >= 0; i--)
@@ -60,8 +60,9 @@ namespace Game
             return sb.ToString();
         }
 
-        //Приватные методы
-        private BigNumber Add(BigNumber bnum)
+        //Приватные методы для математики
+        //Сложение поблочно
+        private BigNumber Add(BigNumber bnum) 
         {
             int maxLength = Math.Max(number.Length, bnum.number.Length);
             int[] result = new int[maxLength + 1];
@@ -78,9 +79,12 @@ namespace Game
 
             return new BigNumber(TrimLeadingZeros(result));
         }
-
+        //Вычитание
         private BigNumber Substruct(BigNumber bnum)
         {
+            if (this.CompareTo(bnum) < 0)
+                throw new InvalidOperationException("Результат вычитания отрицательный — не поддерживается.");
+
             int[] result = new int[number.Length];
             int borrow = 0;
 
@@ -102,43 +106,43 @@ namespace Game
 
             return new BigNumber(TrimLeadingZeros(result));
         }
-
+        //Умножение с округлением вниз
         private BigNumber Multiply(double multiplier)
         {
             int[] result = new int[number.Length + 1];
-            int carry = 0;
+            long carry = 0;
 
             for (int i = 0; i < number.Length; i++)
             {
-                long prod = (long)(number[i] * multiplier + carry);
+                long prod = (long)Math.Floor(number[i] * multiplier + carry);
                 result[i] = (int)(prod % Base);
-                carry = (int)(prod / Base);
+                carry = prod / Base;
             }
 
             if (carry > 0)
-                result[number.Length] = carry;
+                result[number.Length] = (int)carry;
 
             return new BigNumber(TrimLeadingZeros(result));
         }
-
+        //Деление
         private BigNumber Divide(double divisor)
         {
             if (divisor == 0)
                 throw new DivideByZeroException();
 
             int[] result = new int[number.Length];
-            int remainder = 0;
+            double remainder = 0;
 
             for (int i = number.Length - 1; i >= 0; i--)
             {
                 double current = number[i] + remainder * Base;
                 result[i] = (int)(current / divisor);
-                remainder = (int)(current % divisor);
+                remainder = current % divisor;
             }
 
             return new BigNumber(TrimLeadingZeros(result));
         }
-
+        //Убираем лишние нули
         private static int[] TrimLeadingZeros(int[] arr)
         {
             int i = arr.Length - 1;
@@ -147,9 +151,10 @@ namespace Game
             Array.Copy(arr, res, i + 1);
             return res;
         }
-
+        //Сравнение больших чисел
         private int CompareTo(BigNumber bnum)
         {
+            if (bnum == null) return 1;
             if (number.Length != bnum.number.Length)
                 return number.Length.CompareTo(bnum.number.Length);
 
@@ -191,7 +196,19 @@ namespace Game
                 return this == other;
             return false;
         }
-
-        public override int GetHashCode() => number.Length.GetHashCode();
+        // Суммарный хэш по содержимому
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 17;
+                hash = hash * 31 + number.Length;
+                for (int i = 0; i < number.Length; i += Math.Max(1, number.Length / 8))
+                {
+                    hash = hash * 31 + number[i];
+                }
+                return hash;
+            }
+        }
     }
 }
