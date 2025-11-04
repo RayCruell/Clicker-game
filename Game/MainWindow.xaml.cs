@@ -4,26 +4,20 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
-using static System.Formats.Asn1.AsnWriter;
 
 namespace Game
 {
     public partial class MainWindow : Window
     {
-        private EnemyTemplateList enemyList;      
-        private List<CIcon> icons;                 
-        private CIcon selectedIcon;               
-        private string defaultIconsPath;           
-
-        private void Window_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            Point mousePosition = Mouse.GetPosition(scene);
-        }
-
+        private EnemyTemplateList enemyList;
+        private List<CIcon> icons;
+        private CIcon selectedIcon;
+        private string defaultIconsPath;
 
         public MainWindow()
         {
@@ -210,13 +204,11 @@ namespace Game
 
         private void EnemiesListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (EnemiesListBox.SelectedItem == null)
-                return;
+            if (EnemiesListBox.SelectedItem == null) return;
 
             string selectedEnemyName = EnemiesListBox.SelectedItem.ToString();
             var enemy = enemyList.FindByName(selectedEnemyName);
-            if (enemy == null)
-                return;
+            if (enemy == null) return;
 
             EnemyNameBox.Text = enemy.Name;
             IconNameBox.Text = enemy.IconName;
@@ -228,13 +220,43 @@ namespace Game
 
             string iconPath = System.IO.Path.Combine(defaultIconsPath, enemy.IconName + ".png");
             if (File.Exists(iconPath))
-            {
                 SelectedEnemyIcon.Source = new BitmapImage(new Uri(iconPath, UriKind.Absolute));
-            }
             else
+                SelectedEnemyIcon.Source = null;
+        }
+
+        // --- НОВЫЙ метод для кнопки Start Battle ---
+        private void StartBattleButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (enemyList.GetListOfEnemyNames().Count == 0)
             {
-                SelectedEnemyIcon.Source = null; 
+                MessageBox.Show("Сначала нужно добавить или загрузить врагов!");
+                return;
             }
+
+            CPlayer player = new CPlayer();
+            IconList iconList = BuildIconList();
+
+            // Открываем окно боя, не закрывая MainWindow
+            BattleWindow battleWindow = new BattleWindow(player, iconList, enemyList);
+            battleWindow.Owner = this; // ставим MainWindow владельцем, чтобы не блокировать закрытие
+            battleWindow.Show();
+        }
+
+        private IconList BuildIconList()
+        {
+            IconList iconList = new IconList(64, 64, 800, 600); // пример размеров
+            foreach (var cicon in icons)
+            {
+                Icon icon = new Icon(64, 64, cicon.ImagePath);
+                iconList.GetIcons().Add(icon);
+            }
+            return iconList;
+        }
+
+        private void Window_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            Point mousePosition = Mouse.GetPosition(scene);
         }
     }
 

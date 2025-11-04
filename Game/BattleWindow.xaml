@@ -1,0 +1,76 @@
+﻿<Window x:Class="Game.BattleWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Game"
+        mc:Ignorable="d"
+        Title="Кликер" Height="315" Width="700" ResizeMode="NoResize">
+
+    <Grid Margin="20,20,10,20">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*" />
+            <ColumnDefinition Width="3*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Левая панель: информация о враге -->
+        <StackPanel Grid.Column="0" VerticalAlignment="Top" Margin="10,0,10,0">
+            <TextBlock Text="Enemy name:" FontSize="22" FontWeight="Bold" Margin="0,0,0,4"/>
+            <TextBox x:Name="EnemyNameText" FontSize="18" IsReadOnly="True" Margin="0,0,0,12"/>
+
+            <Separator Margin="0,0,0,12"/>
+
+            <TextBlock Text="Enemy hitpoints:" FontSize="20" Margin="0,0,0,4"/>
+            <TextBox x:Name="EnemyHPText" FontSize="18" IsReadOnly="True" Margin="0,0,0,8"/>
+
+            <TextBlock Text="Gold from enemy:" FontSize="20" Margin="0,10,0,4"/>
+            <TextBox x:Name="EnemyGoldText" FontSize="18" IsReadOnly="True" Margin="0,0,0,8"/>
+        </StackPanel>
+
+        <!-- Правая панель: иконка, кнопки, игрок -->
+        <Grid Grid.Column="1" Margin="10,0,10,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" MinWidth="210"/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Левая часть: иконка врага и кнопки -->
+            <StackPanel Grid.Column="0" VerticalAlignment="Top" Height="231" Margin="1,0,1,0">
+                <!-- Иконка врага -->
+                <Border BorderBrush="Gray" BorderThickness="2" CornerRadius="10" HorizontalAlignment="Center" Padding="5" Margin="0,10,0,10">
+                    <Image x:Name="EnemyIcon"
+                           Width="150"
+                           Height="150"
+                           Stretch="UniformToFill"
+                           Cursor="Hand"
+                           MouseDown="EnemyIcon_MouseDown"/>
+                </Border>
+
+                <!-- Кнопки Repeat / Next -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,6">
+                    <Button x:Name="RepeatButton" Content="Repeat" Width="100" Height="35" Click="RepeatButton_Click" Margin="0,0,8,0"/>
+                    <Button x:Name="NextButton" Content="Next" Width="100" Height="35" Click="NextButton_Click"/>
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Правая часть: информация об игроке -->
+            <StackPanel Grid.Column="1" VerticalAlignment="Top" Margin="20,10,0,0" Height="220">
+
+                <!-- Уровень игрока -->
+                <TextBlock Text="Level:" FontSize="20" Margin="0,0,0,4"/>
+                <TextBox x:Name="PlayerLevelText" FontSize="18" IsReadOnly="True"/>
+                <TextBlock Text="Player gold:" FontSize="20"/>
+
+                <!-- Золото -->
+                <TextBox x:Name="PlayerGoldText" FontSize="18" IsReadOnly="True" Margin="0,0,0,8"/>
+                <TextBlock Text="Player damage:" FontSize="20"/>
+
+                <!-- Урон -->
+                <TextBox x:Name="PlayerDamageText" FontSize="18" IsReadOnly="True" Margin="0,0,0,12"/>
+                <Button x:Name="UpgradeButton" Content="Upgrade" Width="120" Height="35" Click="UpgradeButton_Click"/>
+
+                <!-- Кнопка апгрейда -->
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Game
 {
-    internal class CPlayer
+    public class CPlayer
     {
         private int lvl;
         private BigNumber gold;
