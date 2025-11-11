@@ -248,8 +248,10 @@ namespace Game
             IconList iconList = new IconList(64, 64, 800, 600); // пример размеров
             foreach (var cicon in icons)
             {
-                Icon icon = new Icon(64, 64, cicon.ImagePath);
-                iconList.GetIcons().Add(icon);
+                // Создаем НОВЫЙ CIcon с теми же параметрами
+                CIcon newIcon = new CIcon(64, 64, cicon.ImagePath);
+                iconList.GetIcons().Add(newIcon);
+                Debug.WriteLine($"Добавлена иконка в iconList: {newIcon.GetName()} -> {newIcon.ImagePath}");
             }
             return iconList;
         }
@@ -258,11 +260,5 @@ namespace Game
         {
             Point mousePosition = Mouse.GetPosition(scene);
         }
-    }
-
-    public class CIcon
-    {
-        public string Name { get; set; }
-        public string ImagePath { get; set; }
     }
 }

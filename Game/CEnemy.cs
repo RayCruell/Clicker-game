@@ -14,7 +14,7 @@ namespace Game
         private BigNumber currentHitPoints;
         private BigNumber goldReward;
         private bool isDead;
-        private Icon icon;
+        private CIcon icon;
 
         //Публичные свойства (инкапсуляция)
         public string Name
@@ -47,7 +47,7 @@ namespace Game
             private set { isDead = value; }
         }
 
-        public Icon Icon
+        public CIcon Icon
         {
             get { return icon; }
             private set { icon = value; }
@@ -64,7 +64,7 @@ namespace Game
             icon = null; // можно присвоить позже
         }
 
-        public CEnemy(string name, BigNumber maxHp, BigNumber goldReward, Icon icon = null)
+        public CEnemy(string name, BigNumber maxHp, BigNumber goldReward, CIcon icon = null)
         {
             this.name = name ?? "Unknown";
             this.maxHitPoints = maxHp?.Clone() ?? new BigNumber("100");   // клонируем, чтобы не было aliasing

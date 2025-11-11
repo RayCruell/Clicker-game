@@ -8,7 +8,7 @@ namespace Game
 {
     public class IconList
     {
-        private List<Icon> icons;              
+        private List<CIcon> icons;              
         private int border;                   
         private int x;                         
         private int y;                         
@@ -21,7 +21,7 @@ namespace Game
 
         public IconList(int iconWidth, int iconHeight, int canvasWidth, int canvasHeight)
         {
-            icons = new List<Icon>();
+            icons = new List<CIcon>();
             border = 8;
             x = 0;
             y = 0;
@@ -49,7 +49,7 @@ namespace Game
 
             foreach (string file in files)
             {
-                Icon icon = new Icon(imageWidth, imageHeight, file);
+                CIcon icon = new CIcon(imageWidth, imageHeight, file);
 
                 double posX = x + (col * x_sh);
                 double posY = y + (row * y_sh);
@@ -77,9 +77,9 @@ namespace Game
             }
         }
 
-        public List<Icon> GetIcons() => icons;
+        public List<CIcon> GetIcons() => icons;
 
-        public Icon FindByName(string name)
+        public CIcon FindByName(string name)
         {
             foreach (var icon in icons)
                 if (icon.GetName() == name)
@@ -87,7 +87,7 @@ namespace Game
             return null;
         }
 
-        public Icon IsMouseOver(Point mousePosition)
+        public CIcon IsMouseOver(Point mousePosition)
         {
             foreach (var icon in icons)
                 if (icon.IsMouseOver(mousePosition))

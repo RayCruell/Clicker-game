@@ -22,7 +22,7 @@ namespace Game
             {
                 throw new InvalidOperationException($"Враг с именем '{name}' уже существует!");
             }
-            enemies.Add(new EnemyTemplate(name, icon, baseLife, lifeModifier, baseGold, goldModifier, spawnChance));
+            enemies.Add(new EnemyTemplate(name, icon, "", baseLife, lifeModifier, baseGold, goldModifier, spawnChance));
         }
 
         public EnemyTemplate GetEnemyByName(string name)
@@ -84,7 +84,7 @@ namespace Game
                 double goldModifier = element.GetProperty("GoldModifier").GetDouble();
                 double spawnChance = element.GetProperty("SpawnChance").GetDouble();
 
-                EnemyTemplate enemy = new EnemyTemplate(name, iconName, baseLife, lifeModifier, baseGold, goldModifier, spawnChance);
+                EnemyTemplate enemy = new EnemyTemplate(name, iconName, "", baseLife, lifeModifier, baseGold, goldModifier, spawnChance);
                 loadedEnemies.Add(enemy);
             }
 
