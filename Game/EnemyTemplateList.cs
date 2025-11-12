@@ -25,7 +25,7 @@ namespace Game
             enemies.Add(new EnemyTemplate(name, icon, "", baseLife, lifeModifier, baseGold, goldModifier, spawnChance));
         }
 
-        public EnemyTemplate GetEnemyByName(string name)
+        public EnemyTemplate GetEnemyByName(string name) //Найти врага по имени
         {
             foreach (var enemy in enemies)
                 if (enemy.Name == name) 
@@ -33,25 +33,25 @@ namespace Game
             return null;
         }
 
-        public EnemyTemplate GetEnemyByIndex(int id)
+        public EnemyTemplate GetEnemyByIndex(int id) //Найти врага по индексу
         {
             if (id >= 0 && id < enemies.Count)
                 return enemies[id];
             return null;
         }
 
-        public void DeleteEnemyByName(string name)
+        public void DeleteEnemyByName(string name) //Удалить врага по имени
         {
             enemies.RemoveAll(e => e.Name == name); 
         }
 
-        public void DeleteEnemyByIndex(int id)
+        public void DeleteEnemyByIndex(int id) //Удалить врага по индексу
         {
             if (id >= 0 && id < enemies.Count)
                 enemies.RemoveAt(id); 
         }
 
-        public List<string> GetListOfEnemyNames()
+        public List<string> GetListOfEnemyNames() //Получить список имён врагов
         {
             List<string> names = new List<string>();
             foreach (var enemy in enemies)
@@ -73,7 +73,7 @@ namespace Game
             string jsonFromFile = File.ReadAllText(path);
             List<EnemyTemplate> loadedEnemies = new List<EnemyTemplate>();
 
-            JsonDocument doc = JsonDocument.Parse(jsonFromFile);
+            JsonDocument doc = JsonDocument.Parse(jsonFromFile); //Формат для сохранения врагов в json
             foreach (JsonElement element in doc.RootElement.EnumerateArray())
             {
                 string name = element.GetProperty("Name").GetString();

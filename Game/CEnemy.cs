@@ -16,7 +16,7 @@ namespace Game
         private bool isDead;
         private CIcon icon;
 
-        //Публичные свойства (инкапсуляция)
+        //Публичные свойства
         public string Name
         {
             get { return name; }
@@ -61,24 +61,23 @@ namespace Game
             currentHitPoints = new BigNumber("100");
             goldReward = new BigNumber("10");
             isDead = false;
-            icon = null; // можно присвоить позже
+            icon = null;
         }
 
         public CEnemy(string name, BigNumber maxHp, BigNumber goldReward, CIcon icon = null)
         {
             this.name = name ?? "Unknown";
-            this.maxHitPoints = maxHp?.Clone() ?? new BigNumber("100");   // клонируем, чтобы не было aliasing
-            this.currentHitPoints = this.maxHitPoints.Clone();            // при создании HP = maxHP
+            this.maxHitPoints = maxHp?.Clone() ?? new BigNumber("100");
+            this.currentHitPoints = this.maxHitPoints.Clone();
             this.goldReward = goldReward?.Clone() ?? new BigNumber("10");
             this.isDead = false;
             this.icon = icon;
         }
 
-        // Метод клонирования (полезно для Repeat)
+        // Метод клонирования
         public CEnemy Clone()
         {
             var clone = new CEnemy(this.name, this.maxHitPoints.Clone(), this.goldReward.Clone(), this.icon);
-            // currentHP у нас будет равен maxHP в этом клоне — обычно для Repeat это ок.
             return clone;
         }
 

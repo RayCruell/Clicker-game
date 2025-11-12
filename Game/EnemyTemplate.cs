@@ -6,7 +6,7 @@ namespace Game
     {
         [JsonInclude] public string Name { get; private set; }
         [JsonInclude] public string IconName { get; private set; }
-        [JsonInclude] public string IconPath { get; private set; } // полный путь к PNG
+        [JsonInclude] public string IconPath { get; private set; }
         [JsonInclude] public int BaseLife { get; private set; }
         [JsonInclude] public double LifeModifier { get; private set; }
         [JsonInclude] public int BaseGold { get; private set; }

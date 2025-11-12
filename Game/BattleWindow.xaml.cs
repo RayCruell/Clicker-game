@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Security.Policy;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
@@ -19,6 +20,8 @@ namespace Game
         private List<string> availableEnemies = new List<string>();
         private List<string> defeatedEnemies = new List<string>();
 
+        public List<CEnemy> enemies = new List<CEnemy>(); //ДОБАВЛЕНО
+
         public BattleWindow(CPlayer player, IconList iconList, EnemyTemplateList enemyTemplates)
         {
             InitializeComponent();
@@ -29,41 +32,36 @@ namespace Game
             availableEnemies = new List<string>(templates.GetListOfEnemyNames());
             defeatedEnemies = new List<string>();
 
-            NextEnemy(); // загружаем первого врага
+            //CEnemy randEnemy = templates.FindByName("amogus");
+
+            NextEnemy();
         }
 
         private void UpdateUI()
         {
-            // Враг
             if (currentEnemy != null)
             {
                 EnemyNameText.Text = currentEnemy.Name;
                 EnemyHPText.Text = $"{currentEnemy.CurrentHitPoints} / {currentEnemy.MaxHitPoints}";
                 EnemyGoldText.Text = currentEnemy.GoldReward.ToString();
 
-                Debug.WriteLine($"Иконка врага: {currentEnemy.Icon?.ImagePath}");
-
                 if (currentEnemy.Icon != null && File.Exists((string)currentEnemy.Icon.ImagePath))
                 {
                     try
                     {
                         EnemyIcon.Source = new BitmapImage(new Uri((string)currentEnemy.Icon.ImagePath, UriKind.Absolute));
-                        Debug.WriteLine("Иконка загружена успешно");
                     }
                     catch
                     {
-                        Debug.WriteLine($"Ошибка загрузки иконки");
                         EnemyIcon.Source = null;
                     }
                 }
                 else
                 {
-                    Debug.WriteLine("Иконка не установлена или путь пустой");
                     EnemyIcon.Source = null;
                 }
             }
 
-            // Игрок
             PlayerLevelText.Text = player.Lvl.ToString();
             PlayerGoldText.Text = player.Gold.ToString();
             PlayerDamageText.Text = player.Damage.ToString();
@@ -83,20 +81,19 @@ namespace Game
             UpdateUI();
         }
 
-        private void RepeatButton_Click(object sender, RoutedEventArgs e)
+        private void RepeatButton_Click(object sender, RoutedEventArgs e) //Кнопка повторения списка
         {
-            // Начинаем последовательность заново
             availableEnemies = new List<string>(templates.GetListOfEnemyNames());
             defeatedEnemies.Clear();
-            NextEnemy(); // Это заполнит интерфейс новым врагом
+            NextEnemy();
         }
 
-        private void NextButton_Click(object sender, RoutedEventArgs e)
+        private void NextButton_Click(object sender, RoutedEventArgs e) //Кнопка следующего врага
         {
             NextEnemy();
         }
 
-        private void NextEnemy()
+        private void NextEnemy() // Обработка следующего врага
         {
             if (templates == null || templates.GetListOfEnemyNames().Count == 0) return;
 
@@ -122,37 +119,32 @@ namespace Game
                     }
                 }
 
-                // СОЗДАЕМ врага НЕ удаляя из availableEnemies!
                 currentEnemy = new CEnemy(
                     template.Name,
                     new BigNumber(template.BaseLife.ToString()),
                     new BigNumber(template.BaseGold.ToString()),
                     enemyIcon
                 );
-
                 UpdateUI();
-
-                // НЕ удаляем из availableEnemies здесь!
-                // Враг удалится только когда будет побежден в EnemyIcon_MouseDown
             }
         }
 
-        private void EnemyIcon_MouseDown(object sender, MouseButtonEventArgs e)
+        private void EnemyIcon_MouseDown(object sender, MouseButtonEventArgs e) //ТУТ ПОМЕНЯТЬ
         {
             if (currentEnemy == null) return;
 
             var dmg = player.DealDamage();
             if (currentEnemy.TakeDamage(dmg, out BigNumber reward))
             {
-                // Враг убит - ТОЛЬКО ТЕПЕРЬ удаляем из availableEnemies!
                 var defeatedEnemyName = currentEnemy.Name;
                 availableEnemies.Remove(defeatedEnemyName);
                 defeatedEnemies.Add(defeatedEnemyName);
 
+                //enemies.
+
                 player.AddGold(reward);
                 MessageBox.Show($"Враг убит! Вот тебе {reward} золота!", "Победа!");
 
-                // Проверяем не последний ли это был враг
                 if (availableEnemies.Count == 0)
                 {
                     ClearBattleInterface();
@@ -167,16 +159,13 @@ namespace Game
             UpdateUI();
         }
 
-        private void ClearBattleInterface()
+        private void ClearBattleInterface() //Убираем после пройденного списка всех врагов
         {
             currentEnemy = null;
-
-            // Очищаем все поля
             EnemyNameText.Text = "";
             EnemyHPText.Text = "";
             EnemyGoldText.Text = "";
             EnemyIcon.Source = null;
-
             EnemyNameText.Text = "Все враги побеждены!";
         }
     }
