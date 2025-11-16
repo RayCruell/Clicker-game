@@ -17,10 +17,7 @@ namespace Game
         private IconList iconList;
         private Random rng = new Random();
 
-        private List<string> availableEnemies = new List<string>();
-        private List<string> defeatedEnemies = new List<string>();
-
-        public List<CEnemy> enemies = new List<CEnemy>(); //ДОБАВЛЕНО
+        public List<CEnemy> enemies = new List<CEnemy>(); // Вместо двух списков у нас теперь только один, больше не реализуем два списка по именам, где были побеждённые и доступные враги
 
         public BattleWindow(CPlayer player, IconList iconList, EnemyTemplateList enemyTemplates)
         {
@@ -29,12 +26,75 @@ namespace Game
             this.iconList = iconList ?? throw new ArgumentNullException(nameof(iconList));
             this.templates = enemyTemplates ?? throw new ArgumentNullException(nameof(enemyTemplates));
 
-            availableEnemies = new List<string>(templates.GetListOfEnemyNames());
-            defeatedEnemies = new List<string>();
-
-            //CEnemy randEnemy = templates.FindByName("amogus");
+            enemies = CreateAllEnemies();
 
             NextEnemy();
+        }
+
+        private List<CEnemy> CreateAllEnemies()
+        {
+            var allEnemies = new List<CEnemy>();
+            var enemyNames = templates.GetListOfEnemyNames();
+
+            foreach (var enemyName in enemyNames)
+            {
+                var template = templates.GetEnemyByName(enemyName);
+                if (template != null)
+                {
+                    CIcon enemyIcon = null;
+                    if (iconList != null)
+                    {
+                        var ic = iconList.FindByName(template.IconName);
+                        if (ic != null && !string.IsNullOrEmpty(ic.ImagePath))
+                        {
+                            enemyIcon = new CIcon(ic.GetIconWidth(), ic.GetIconHeight(), ic.ImagePath);
+                        }
+                    }
+
+                    var enemy = new CEnemy(
+                        template.Name,
+                        new BigNumber(template.BaseLife.ToString()),
+                        new BigNumber(template.BaseGold.ToString()),
+                        enemyIcon
+                    );
+                    allEnemies.Add(enemy);
+                }
+            }
+            return allEnemies;
+        }
+
+        private CEnemy GetRandomEnemyWithChances()
+        {
+            if (enemies.Count == 0) return null;
+            double totalChance = 0;
+            foreach (var enemy in enemies)
+            {
+                var template = templates.GetEnemyByName(enemy.Name);
+                if (template != null)
+                {
+                    totalChance += template.SpawnChance;
+                }
+            }
+
+            if (totalChance == 0) return enemies[0];
+
+            double randomValue = rng.NextDouble() * totalChance;
+
+            double currentSum = 0;
+            foreach (var enemy in enemies)
+            {
+                var template = templates.GetEnemyByName(enemy.Name);
+                if (template != null)
+                {
+                    currentSum += template.SpawnChance;
+                    if (randomValue <= currentSum)
+                    {
+                        return enemy;
+                    }
+                }
+            }
+
+            return enemies[0];
         }
 
         private void UpdateUI()
@@ -83,8 +143,7 @@ namespace Game
 
         private void RepeatButton_Click(object sender, RoutedEventArgs e) //Кнопка повторения списка
         {
-            availableEnemies = new List<string>(templates.GetListOfEnemyNames());
-            defeatedEnemies.Clear();
+            enemies = CreateAllEnemies();
             NextEnemy();
         }
 
@@ -93,62 +152,51 @@ namespace Game
             NextEnemy();
         }
 
+        private void RemoveDefeatedEnemy(string enemyName)
+        {
+            var defeatedEnemy = enemies.Find(e => e.Name == enemyName);
+            if (defeatedEnemy != null)
+            {
+                enemies.Remove(defeatedEnemy);
+            }
+        }
+
         private void NextEnemy() // Обработка следующего врага
         {
-            if (templates == null || templates.GetListOfEnemyNames().Count == 0) return;
-
-            if (availableEnemies.Count == 0)
+            if (templates == null || templates.GetListOfEnemyNames().Count == 0)
             {
                 ClearBattleInterface();
                 return;
             }
 
-            // Берем случайного врага из доступных
-            var randomName = availableEnemies[rng.Next(availableEnemies.Count)];
-            var template = templates.GetEnemyByName(randomName);
+            currentEnemy = GetRandomEnemyWithChances();
 
-            if (template != null)
+            if (currentEnemy != null)
             {
-                CIcon enemyIcon = null;
-                if (iconList != null)
-                {
-                    var ic = iconList.FindByName(template.IconName);
-                    if (ic != null && !string.IsNullOrEmpty(ic.ImagePath))
-                    {
-                        enemyIcon = new CIcon(ic.GetIconWidth(), ic.GetIconHeight(), ic.ImagePath);
-                    }
-                }
-
-                currentEnemy = new CEnemy(
-                    template.Name,
-                    new BigNumber(template.BaseLife.ToString()),
-                    new BigNumber(template.BaseGold.ToString()),
-                    enemyIcon
-                );
                 UpdateUI();
+            }
+            else
+            {
+                ClearBattleInterface();
             }
         }
 
-        private void EnemyIcon_MouseDown(object sender, MouseButtonEventArgs e) //ТУТ ПОМЕНЯТЬ
+        private void EnemyIcon_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if (currentEnemy == null) return;
 
             var dmg = player.DealDamage();
             if (currentEnemy.TakeDamage(dmg, out BigNumber reward))
             {
-                var defeatedEnemyName = currentEnemy.Name;
-                availableEnemies.Remove(defeatedEnemyName);
-                defeatedEnemies.Add(defeatedEnemyName);
-
-                //enemies.
+                RemoveDefeatedEnemy(currentEnemy.Name);
 
                 player.AddGold(reward);
-                MessageBox.Show($"Враг убит! Вот тебе {reward} золота!", "Победа!");
+                MessageBox.Show($"Враг убит! Держи {reward} золота!", "Успех!");
 
-                if (availableEnemies.Count == 0)
+                if (enemies.Count == 0)
                 {
                     ClearBattleInterface();
-                    MessageBox.Show("Все враги убиты! Нажми Repeat для очередного гринда...", "Победа!");
+                    MessageBox.Show("Все враги побеждены! Нажмите 'Repeat' для новой битвы.", "Победа!");
                 }
                 else
                 {
@@ -166,7 +214,6 @@ namespace Game
             EnemyHPText.Text = "";
             EnemyGoldText.Text = "";
             EnemyIcon.Source = null;
-            EnemyNameText.Text = "Все враги побеждены!";
         }
     }
 }

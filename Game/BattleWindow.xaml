@@ -41,7 +41,7 @@
                     <Image x:Name="EnemyIcon"
                            Width="150"
                            Height="150"
-                           Stretch="UniformToFill"
+                           Stretch="Uniform"
                            Cursor="Hand"
                            MouseDown="EnemyIcon_MouseDown"/>
                 </Border>
