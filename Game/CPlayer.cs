@@ -106,13 +106,22 @@ namespace Game
         }
 
         //Проверка и списание золота при апгрейде
-        private bool TrySpendGold(BigNumber amount)
+        public bool TrySpendGold(BigNumber amount)
         {
-            if (gold < amount)
-                return false;
+            if (gold >= amount)
+            {
+                gold = gold - amount;
+                return true;
+            }
+            return false;
+        }
 
-            gold = gold - amount;
-            return true;
+        public void SpendGold(BigNumber amount)
+        {
+            if (gold >= amount)
+                gold = gold - amount;
+            else
+                throw new InvalidOperationException("Недостаточно золота!");
         }
     }
 }
