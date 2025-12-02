@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Game
 {
@@ -32,7 +33,7 @@ namespace Game
             this.iconList = iconList ?? throw new ArgumentNullException(nameof(iconList));
             this.templates = enemyTemplates ?? throw new ArgumentNullException(nameof(enemyTemplates));
 
-            clickCooldownTimer = new CCountdownTimer(0.5); //Инициализация таймера
+            clickCooldownTimer = new CCountdownTimer(2.0); //Инициализация таймера
             InitializeGameTimer(); 
 
             enemies = CreateAllEnemies();
@@ -134,7 +135,7 @@ namespace Game
             PlayerGoldText.Text = player.Gold.ToString();
             PlayerDamageText.Text = player.Damage.ToString();
 
-            CooldownText.Text = clickCooldownTimer.IsFinished() ? "Готово!" : $"{clickCooldownTimer.getTime():F1} сек";
+            CooldownText.Text = $"{clickCooldownTimer.GetDuration():F1} сек";
         }
 
         private void UpgradeButton_Click(object sender, RoutedEventArgs e)
@@ -204,14 +205,13 @@ namespace Game
             if (currentEnemy.TakeDamage(dmg, out BigNumber reward))
             {
                 RemoveDefeatedEnemy(currentEnemy.Name);
-
                 player.AddGold(reward);
-                MessageBox.Show($"Враг убит! Держи {reward} золота!", "Успех!");
+                AddActionLog($"Убит {currentEnemy.Name}! +{reward} золота");
 
                 if (enemies.Count == 0)
                 {
                     ClearBattleInterface();
-                    MessageBox.Show("Все враги побеждены! Нажмите 'Repeat' для новой битвы.", "Победа!");
+                    AddActionLog("Все враги побеждены!");
                 }
                 else
                 {
@@ -219,10 +219,8 @@ namespace Game
                 }
             }
 
-            AddActionLog($"Убит {currentEnemy.Name}! +{reward} золота");
-
-            clickCooldownTimer.Start(0.5);
-            UpdateUI();
+            clickCooldownTimer.Start(2.0);
+            UpdateUI(); // Обновляем UI - покажет новое значение если перезарядка изменилась
         }
 
         private void ClearBattleInterface() //Убираем после пройденного списка всех врагов
@@ -245,7 +243,6 @@ namespace Game
         private void GameTimer_Tick(object sender, EventArgs e) //Обновление перезарядки
         {
             clickCooldownTimer.update(0.1);
-            CooldownText.Text = clickCooldownTimer.IsFinished() ? "Готово!" : $"{clickCooldownTimer.getTime():F1} сек";
             UpdateBonusObjects(0.1);
         }
 
@@ -288,13 +285,14 @@ namespace Game
                     // ДАЁМ БОНУС ИГРОКУ
                     if (bonus is CDamageBooster damageBooster)
                     {
-                        AddActionLog("Урон увеличен на 50%");
+                        player.Damage = player.Damage * damageBooster.GetDamageMultiplier();
+                        AddActionLog($"Урон увеличен на 20%! Теперь: {player.Damage}");
                     }
                     else if (bonus is CCooldownReducer cooldownReducer)
                     {
                         double newCooldown = clickCooldownTimer.GetDuration() * cooldownReducer.GetCooldownReduction();
                         clickCooldownTimer.SetDuration(newCooldown);
-                        AddActionLog($"Перезарядка -15% ({newCooldown:F1} сек)");
+                        AddActionLog($"Перезарядка ({newCooldown:F1} сек)");
                     }
                     else if (bonus is CGoldGiver goldGiver)
                     {
@@ -335,8 +333,7 @@ namespace Game
 
         private void SpawnBonusObject()
         {
-            // Теперь бонусы появляются ТОЛЬКО на области картинки врага (150x150)
-            double x = rng.NextDouble() * (150 - 25); // 150 - размер иконки, 25 - размер бонуса
+            double x = rng.NextDouble() * (150 - 25);
             double y = rng.NextDouble() * (150 - 25);
             Point position = new Point(x, y);
 
@@ -346,10 +343,10 @@ namespace Game
             switch (type)
             {
                 case 0:
-                    bonus = new CDamageBooster(position, 25, 5.0, 1.5);
+                    bonus = new CDamageBooster(position, 25, 5.0, 1.2);
                     break;
                 case 1:
-                    bonus = new CCooldownReducer(position, 25, 8.0, 0.7);
+                    bonus = new CCooldownReducer(position, 25, 8.0, 0.85);
                     break;
                 case 2:
                     bonus = new CGoldGiver(position, 25, 5.0, new BigNumber("50"));
@@ -378,7 +375,7 @@ namespace Game
                 double newCooldown = clickCooldownTimer.GetDuration() * 0.97;
                 clickCooldownTimer.SetDuration(newCooldown);
                 AddActionLog($"Ускорение атаки -3% ({newCooldown:F1} сек)");
-                UpdateUI();
+                UpdateUI(); // ← Обновит CooldownText с новым значением
             }
             else
             {

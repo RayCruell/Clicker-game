@@ -30,7 +30,7 @@ namespace Game
         public BigNumber Damage
         {
             get { return damage; }
-            private set { damage = value; }
+            set { damage = value; }
         }
 
         public double DamageModifier

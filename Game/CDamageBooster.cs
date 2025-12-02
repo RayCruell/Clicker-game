@@ -13,7 +13,7 @@ namespace Game
         private double damageMultiplier;
 
         public CDamageBooster(Point position, double size, double lifetime, double multiplier)
-            : base(position, size, lifetime)
+        : base(position, size, lifetime)
         {
             this.damageMultiplier = multiplier;
             sprite.Fill = Brushes.Red;
@@ -29,7 +29,11 @@ namespace Game
 
         public override BigNumber GetDamageValue(CPlayer player)
         {
-            return player.Damage;
+            return player.Damage * damageMultiplier;
+        }
+        public void ApplyBonus(CPlayer player)
+        {
+            player.Damage = player.Damage * damageMultiplier;
         }
     }
 }
