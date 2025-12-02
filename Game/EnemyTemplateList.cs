@@ -1,99 +1,117 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text.Json;
+using System.Linq;
 using System.Text.Json.Serialization;
 
 namespace Game
 {
     public class EnemyTemplateList
     {
-        [JsonInclude] private List<EnemyTemplate> enemies; 
+        [JsonInclude]
+        private List<CEnemyTemplate> enemies;
+        private readonly ISaveList<List<CEnemyTemplate>> _serializer;
 
         public EnemyTemplateList()
         {
-            enemies = new List<EnemyTemplate>(); 
+            enemies = new List<CEnemyTemplate>();
+            _serializer = new JsonEnemySaver();
         }
 
-        public void AddEnemy(string name, string icon, int baseLife, double lifeModifier,
-                     int baseGold, double goldModifier, double spawnChance)
+        // Добавление обычного врага
+        public void AddNormalEnemy(string name, string icon, int baseLife, double lifeModifier,
+                                  int baseGold, double goldModifier, double spawnChance)
         {
             if (enemies.Any(e => e.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
-            {
                 throw new InvalidOperationException($"Враг с именем '{name}' уже существует!");
-            }
-            enemies.Add(new EnemyTemplate(name, icon, "", baseLife, lifeModifier, baseGold, goldModifier, spawnChance));
+
+            enemies.Add(new CNormalEnemyTemplate(name, icon, baseLife, lifeModifier,
+                                                baseGold, goldModifier, spawnChance));
         }
 
-        public EnemyTemplate GetEnemyByName(string name) //Найти врага по имени
+        // Добавление бронированного врага
+        public void AddArmoredEnemy(string name, string icon, int baseLife, double lifeModifier,
+                                   int baseGold, double goldModifier, double spawnChance, double armor)
         {
-            foreach (var enemy in enemies)
-                if (enemy.Name == name) 
-                    return enemy;
-            return null;
+            if (enemies.Any(e => e.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+                throw new InvalidOperationException($"Враг с именем '{name}' уже существует!");
+
+            enemies.Add(new CArmoredEnemyTemplate(name, icon, baseLife, lifeModifier,
+                                                 baseGold, goldModifier, spawnChance, armor));
         }
 
-        public EnemyTemplate GetEnemyByIndex(int id) //Найти врага по индексу
+        // Добавление укорачивающегося врага
+        public void AddShrinkingEnemy(string name, string icon, int baseLife, double lifeModifier,
+                                     int baseGold, double goldModifier, double spawnChance, double shrinkFactor)
+        {
+            if (enemies.Any(e => e.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+                throw new InvalidOperationException($"Враг с именем '{name}' уже существует!");
+
+            enemies.Add(new CShrinkingEnemyTemplate(name, icon, baseLife, lifeModifier,
+                                                   baseGold, goldModifier, spawnChance, shrinkFactor));
+        }
+
+        // Добавление исцеляющегося врага
+        public void AddHealingEnemy(string name, string icon, int baseLife, double lifeModifier,
+                                   int baseGold, double goldModifier, double spawnChance,
+                                   double healChance, double healPercentage)
+        {
+            if (enemies.Any(e => e.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+                throw new InvalidOperationException($"Враг с именем '{name}' уже существует!");
+
+            enemies.Add(new CHealingEnemyTemplate(name, icon, baseLife, lifeModifier,
+                                                 baseGold, goldModifier, spawnChance,
+                                                 healChance, healPercentage));
+        }
+
+        // Общий метод добавления любого врага
+        public void AddEnemy(CEnemyTemplate enemy)
+        {
+            if (enemies.Any(e => e.Name.Equals(enemy.Name, StringComparison.OrdinalIgnoreCase)))
+                throw new InvalidOperationException($"Враг с именем '{enemy.Name}' уже существует!");
+
+            enemies.Add(enemy);
+        }
+
+        public CEnemyTemplate GetEnemyByName(string name)
+        {
+            return enemies.FirstOrDefault(e => e.Name == name);
+        }
+
+        public CEnemyTemplate GetEnemyByIndex(int id)
         {
             if (id >= 0 && id < enemies.Count)
                 return enemies[id];
             return null;
         }
 
-        public void DeleteEnemyByName(string name) //Удалить врага по имени
+        public void DeleteEnemyByName(string name)
         {
-            enemies.RemoveAll(e => e.Name == name); 
+            enemies.RemoveAll(e => e.Name == name);
         }
 
-        public void DeleteEnemyByIndex(int id) //Удалить врага по индексу
+        public List<string> GetListOfEnemyNames()
         {
-            if (id >= 0 && id < enemies.Count)
-                enemies.RemoveAt(id); 
-        }
-
-        public List<string> GetListOfEnemyNames() //Получить список имён врагов
-        {
-            List<string> names = new List<string>();
-            foreach (var enemy in enemies)
-                names.Add(enemy.Name);
-            return names;
+            return enemies.Select(e => e.Name).ToList();
         }
 
         public void SaveToJson(string path)
         {
-            string jsonString = JsonSerializer.Serialize(enemies, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(path, jsonString);
+            _serializer.Save(enemies, path);
         }
 
         public void LoadFromJson(string path)
         {
-            if (!File.Exists(path))
-                return;
-
-            string jsonFromFile = File.ReadAllText(path);
-            List<EnemyTemplate> loadedEnemies = new List<EnemyTemplate>();
-
-            JsonDocument doc = JsonDocument.Parse(jsonFromFile); //Формат для сохранения врагов в json
-            foreach (JsonElement element in doc.RootElement.EnumerateArray())
-            {
-                string name = element.GetProperty("Name").GetString();
-                string iconName = element.GetProperty("IconName").GetString();
-                int baseLife = element.GetProperty("BaseLife").GetInt32();
-                double lifeModifier = element.GetProperty("LifeModifier").GetDouble();
-                int baseGold = element.GetProperty("BaseGold").GetInt32();
-                double goldModifier = element.GetProperty("GoldModifier").GetDouble();
-                double spawnChance = element.GetProperty("SpawnChance").GetDouble();
-
-                EnemyTemplate enemy = new EnemyTemplate(name, iconName, "", baseLife, lifeModifier, baseGold, goldModifier, spawnChance);
-                loadedEnemies.Add(enemy);
-            }
-
-            enemies = loadedEnemies; 
+            enemies = _serializer.Load(path);
         }
-        public EnemyTemplate FindByName(string name)
+
+        public CEnemyTemplate FindByName(string name)
         {
             return enemies.FirstOrDefault(e => e.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
         }
 
+        public List<CEnemyTemplate> GetAllEnemies()
+        {
+            return new List<CEnemyTemplate>(enemies);
+        }
     }
 }
