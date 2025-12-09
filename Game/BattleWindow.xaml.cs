@@ -13,17 +13,36 @@ namespace Game
 {
     public partial class BattleWindow : Window
     {
+        // ДЕЛЕГАТ для общих игровых событий
         public delegate void GameEventHandler(object sender, GameEventArgs e);
 
-        public event GameEventHandler EnemyChanged;           // Сменился враг
-        public event GameEventHandler EnemyDamaged;          // Враг получил урон
-        public event GameEventHandler EnemyDefeated;         // Враг побеждён
-        public event GameEventHandler BonusSpawned;          // Появился бонус
-        public event GameEventHandler BonusCollected;        // Бонус собран
-        public event GameEventHandler PlayerUpgraded;        // Игрок улучшился
-        public event GameEventHandler GameAction;            // Любое игровое действие
+        // ДЕЛЕГАТ для UI событий (по заданию)
+        public delegate void SceneEventHandler(object sender, GameEventArgs e);
 
+        // ОБЩИЕ ИГРОВЫЕ СОБЫТИЯ
+        public event GameEventHandler EnemyChanged;
+        public event GameEventHandler EnemyDamaged;
+        public event GameEventHandler EnemyDefeated;
+        public event GameEventHandler BonusSpawned;
+        public event GameEventHandler BonusCollected;
+        public event GameEventHandler PlayerUpgraded; // ДОБАВЛЯЕМ ЭТО!
+        public event GameEventHandler GameAction;
+
+        // UI СОБЫТИЯ (по заданию)
+        public event SceneEventHandler EnemyAddedToScene;
+        public event SceneEventHandler EnemyRemovedFromScene;
+        public event SceneEventHandler EnemyReplacedInScene;
+        public event SceneEventHandler BonusAddedToScene;
+        public event SceneEventHandler BonusRemovedFromScene;
+        public event SceneEventHandler EnemyDamagedInScene;
+
+        // Методы для генерации событий
         private void RaiseGameEvent(GameEventHandler handler, string message, object data = null)
+        {
+            handler?.Invoke(this, new GameEventArgs(message, data));
+        }
+
+        private void RaiseSceneEvent(SceneEventHandler handler, string message, object data = null)
         {
             handler?.Invoke(this, new GameEventArgs(message, data));
         }
@@ -54,20 +73,34 @@ namespace Game
             enemies = CreateAllEnemies();
             NextEnemy();
 
-            // ПОДПИСКА НА СОБЫТИЯ ИГРЫ
+            // ПОДПИСКА НА ОБЩИЕ ИГРОВЫЕ СОБЫТИЯ
             EnemyChanged += OnGameEvent;
             EnemyDamaged += OnGameEvent;
             EnemyDefeated += OnGameEvent;
             BonusSpawned += OnGameEvent;
             BonusCollected += OnGameEvent;
-            PlayerUpgraded += OnGameEvent;
+            PlayerUpgraded += OnGameEvent; // ДОБАВЛЯЕМ!
             GameAction += OnGameEvent;
+
+            // ПОДПИСКА НА UI СОБЫТИЯ (по заданию)
+            EnemyAddedToScene += OnSceneEvent;
+            EnemyRemovedFromScene += OnSceneEvent;
+            EnemyReplacedInScene += OnSceneEvent;
+            BonusAddedToScene += OnSceneEvent;
+            BonusRemovedFromScene += OnSceneEvent;
+            EnemyDamagedInScene += OnSceneEvent;
         }
 
+        // ОБРАБОТЧИК ОБЩИХ ИГРОВЫХ СОБЫТИЙ
         private void OnGameEvent(object sender, GameEventArgs e)
         {
-            // Выводим в консоль (можно добавить в отдельный лог на форме)
             Console.WriteLine($"[GAME {e.Timestamp:HH:mm:ss}] {e.Message}");
+        }
+
+        // ОБРАБОТЧИК UI СОБЫТИЙ
+        private void OnSceneEvent(object sender, GameEventArgs e)
+        {
+            Console.WriteLine($"[UI EVENT {e.Timestamp:HH:mm:ss}] {e.Message}");
         }
 
         private List<CEnemy> CreateAllEnemies()
@@ -206,13 +239,27 @@ namespace Game
                 return;
             }
 
+            // Если был предыдущий враг - событие удаления
+            if (currentEnemy != null)
+            {
+                RaiseSceneEvent(EnemyRemovedFromScene, $"Враг удалён из окна: {currentEnemy.Name}", currentEnemy);
+            }
+
             currentEnemy = GetRandomEnemyWithChances();
 
             if (currentEnemy != null)
             {
                 UpdateUI();
-                // ГЕНЕРИРУЕМ СОБЫТИЕ СМЕНЫ ВРАГА
-                RaiseGameEvent(EnemyChanged, $"Появился враг: {currentEnemy.Name}", currentEnemy);
+
+                // СОБЫТИЕ ДОБАВЛЕНИЯ/ЗАМЕНЫ ВРАГА (по заданию!)
+                if (EnemyIcon.Source == null)
+                {
+                    RaiseSceneEvent(EnemyAddedToScene, $"Враг добавлен в окно: {currentEnemy.Name}", currentEnemy);
+                }
+                else
+                {
+                    RaiseSceneEvent(EnemyReplacedInScene, $"Враг заменён в окне: {currentEnemy.Name}", currentEnemy);
+                }
             }
             else
             {
@@ -235,8 +282,8 @@ namespace Game
             bool isDead = currentEnemy.TakeDamage(dmg, out BigNumber reward, out string combatLog);
 
             // ГЕНЕРИРУЕМ СОБЫТИЕ ПОЛУЧЕНИЯ УРОНА
-            RaiseGameEvent(EnemyDamaged, $"Атака по {currentEnemy.Name}: {combatLog}",
-                          new { Damage = dmg, Log = combatLog });
+            RaiseSceneEvent(EnemyDamagedInScene, $"Враг получил урон в окне: {currentEnemy.Name} ({combatLog})",
+                   new { Enemy = currentEnemy, Damage = dmg, Log = combatLog });
 
             // Выводим лог в интерфейс
             AddActionLog(combatLog);
@@ -244,8 +291,8 @@ namespace Game
             if (isDead)
             {
                 // ГЕНЕРИРУЕМ СОБЫТИЕ ПОБЕДЫ НАД ВРАГОМ
-                RaiseGameEvent(EnemyDefeated, $"Побеждён враг: {currentEnemy.Name} (+{reward} золота)",
-                              new { Enemy = currentEnemy, Reward = reward });
+                RaiseSceneEvent(EnemyDamagedInScene, $"Враг получил урон в окне: {currentEnemy.Name} ({combatLog})",
+                   new { Enemy = currentEnemy, Damage = dmg, Log = combatLog });
 
                 RemoveDefeatedEnemy(currentEnemy.Name);
                 player.AddGold(reward);
@@ -348,7 +395,7 @@ namespace Game
 
                         bonusObjects.Remove(bonus);
                         // ГЕНЕРИРУЕМ СОБЫТИЕ СБОРА БОНУСА
-                        RaiseGameEvent(BonusCollected, $"Собран бонус: {bonus.GetType().Name}", bonus);
+                        RaiseSceneEvent(BonusRemovedFromScene, $"Бонус удалён из окна: {bonus.GetType().Name}", bonus);
                         RenderBonusObjects();
                         UpdateUI();
                         break;
@@ -407,7 +454,7 @@ namespace Game
             bonusObjects.Add(bonus);
 
             // ГЕНЕРИРУЕМ СОБЫТИЕ ПОЯВЛЕНИЯ БОНУСА
-            RaiseGameEvent(BonusSpawned, $"Появился бонус: {bonus.GetType().Name}", bonus);
+            RaiseSceneEvent(BonusAddedToScene, $"Бонус добавлен в окно: {bonus.GetType().Name}", bonus);
         }
 
         private void RenderBonusObjects()
@@ -416,6 +463,12 @@ namespace Game
             foreach (var bonus in bonusObjects)
             {
                 BonusCanvas.Children.Add(bonus.getSprite());
+            }
+
+            // Можно добавить событие отрисовки бонусов
+            if (bonusObjects.Count > 0)
+            {
+                RaiseSceneEvent(BonusAddedToScene, $"Бонусы отрисованы в окне: {bonusObjects.Count} шт", bonusObjects);
             }
         }
 

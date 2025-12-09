@@ -64,14 +64,39 @@ namespace Game
             EnemySelected += OnEditorEvent;
             ListSaved += OnEditorEvent;
             ListLoaded += OnEditorEvent;
+
+            // Добавляем стартовое сообщение в лог
+            AddEventLog("Редактор врагов запущен");
+        }
+
+        // Вспомогательный метод для добавления сообщений в лог
+        private void AddEventLog(string message)
+        {
+            string logEntry = $"[{DateTime.Now:HH:mm:ss}] {message}";
+            EventLogListBox.Items.Insert(0, logEntry);
+
+            if (EventLogListBox.Items.Count > 15)
+                EventLogListBox.Items.RemoveAt(15);
         }
 
         // ОБРАБОТЧИК СОБЫТИЙ РЕДАКТОРА
         private void OnEditorEvent(object sender, EditorEventArgs e)
         {
-            // Выводим информацию о событии в консоль (или можно в лог)
-            Console.WriteLine($"[{e.Timestamp:HH:mm:ss}] {e.Message}");
-            // Или можно добавить в какой-нибудь Debug-лог на форме
+            // Формируем запись лога
+            string logEntry = $"[{e.Timestamp:HH:mm:ss}] {e.Message}";
+
+            // Добавляем в ListBox
+            Dispatcher.Invoke(() =>
+            {
+                EventLogListBox.Items.Insert(0, logEntry);
+
+                // Ограничиваем 15 сообщениями
+                if (EventLogListBox.Items.Count > 15)
+                    EventLogListBox.Items.RemoveAt(15);
+            });
+
+            // Также выводим в консоль для отладки
+            Console.WriteLine(logEntry);
         }
 
         private void SetDefaultValues()
@@ -501,6 +526,11 @@ namespace Game
         private void EnemyNameBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             // Обработчик изменения текста в поле имени врага
+        }
+        private void ClearLog_Click(object sender, RoutedEventArgs e)
+        {
+            EventLogListBox.Items.Clear();
+            AddEventLog("Лог событий очищен");
         }
     }
 }
