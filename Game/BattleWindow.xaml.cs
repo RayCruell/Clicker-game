@@ -13,6 +13,21 @@ namespace Game
 {
     public partial class BattleWindow : Window
     {
+        public delegate void GameEventHandler(object sender, GameEventArgs e);
+
+        public event GameEventHandler EnemyChanged;           // Сменился враг
+        public event GameEventHandler EnemyDamaged;          // Враг получил урон
+        public event GameEventHandler EnemyDefeated;         // Враг побеждён
+        public event GameEventHandler BonusSpawned;          // Появился бонус
+        public event GameEventHandler BonusCollected;        // Бонус собран
+        public event GameEventHandler PlayerUpgraded;        // Игрок улучшился
+        public event GameEventHandler GameAction;            // Любое игровое действие
+
+        private void RaiseGameEvent(GameEventHandler handler, string message, object data = null)
+        {
+            handler?.Invoke(this, new GameEventArgs(message, data));
+        }
+
         private CPlayer player;
         private CEnemy currentEnemy;
         private EnemyTemplateList templates;
@@ -33,11 +48,26 @@ namespace Game
             this.iconList = iconList ?? throw new ArgumentNullException(nameof(iconList));
             this.templates = enemyTemplates ?? throw new ArgumentNullException(nameof(enemyTemplates));
 
-            clickCooldownTimer = new CCountdownTimer(2.0); //Инициализация таймера
-            InitializeGameTimer(); 
+            clickCooldownTimer = new CCountdownTimer(2.0);
+            InitializeGameTimer();
 
             enemies = CreateAllEnemies();
             NextEnemy();
+
+            // ПОДПИСКА НА СОБЫТИЯ ИГРЫ
+            EnemyChanged += OnGameEvent;
+            EnemyDamaged += OnGameEvent;
+            EnemyDefeated += OnGameEvent;
+            BonusSpawned += OnGameEvent;
+            BonusCollected += OnGameEvent;
+            PlayerUpgraded += OnGameEvent;
+            GameAction += OnGameEvent;
+        }
+
+        private void OnGameEvent(object sender, GameEventArgs e)
+        {
+            // Выводим в консоль (можно добавить в отдельный лог на форме)
+            Console.WriteLine($"[GAME {e.Timestamp:HH:mm:ss}] {e.Message}");
         }
 
         private List<CEnemy> CreateAllEnemies()
@@ -137,6 +167,8 @@ namespace Game
             if (player.TryUpgrade())
             {
                 MessageBox.Show("Успешный апдейт!", "Апдейт", MessageBoxButton.OK, MessageBoxImage.Information);
+                // ГЕНЕРИРУЕМ СОБЫТИЕ АПГРЕЙДА
+                RaiseGameEvent(PlayerUpgraded, $"Игрок улучшен! Уровень: {player.Lvl}", player);
             }
             else
             {
@@ -166,7 +198,7 @@ namespace Game
             }
         }
 
-        private void NextEnemy() // Обработка следующего врага
+        private void NextEnemy()
         {
             if (templates == null || templates.GetListOfEnemyNames().Count == 0)
             {
@@ -179,6 +211,8 @@ namespace Game
             if (currentEnemy != null)
             {
                 UpdateUI();
+                // ГЕНЕРИРУЕМ СОБЫТИЕ СМЕНЫ ВРАГА
+                RaiseGameEvent(EnemyChanged, $"Появился враг: {currentEnemy.Name}", currentEnemy);
             }
             else
             {
@@ -200,11 +234,19 @@ namespace Game
             // Вызываем TakeDamage с получением лога
             bool isDead = currentEnemy.TakeDamage(dmg, out BigNumber reward, out string combatLog);
 
+            // ГЕНЕРИРУЕМ СОБЫТИЕ ПОЛУЧЕНИЯ УРОНА
+            RaiseGameEvent(EnemyDamaged, $"Атака по {currentEnemy.Name}: {combatLog}",
+                          new { Damage = dmg, Log = combatLog });
+
             // Выводим лог в интерфейс
             AddActionLog(combatLog);
 
             if (isDead)
             {
+                // ГЕНЕРИРУЕМ СОБЫТИЕ ПОБЕДЫ НАД ВРАГОМ
+                RaiseGameEvent(EnemyDefeated, $"Побеждён враг: {currentEnemy.Name} (+{reward} золота)",
+                              new { Enemy = currentEnemy, Reward = reward });
+
                 RemoveDefeatedEnemy(currentEnemy.Name);
                 player.AddGold(reward);
 
@@ -305,6 +347,8 @@ namespace Game
                         }
 
                         bonusObjects.Remove(bonus);
+                        // ГЕНЕРИРУЕМ СОБЫТИЕ СБОРА БОНУСА
+                        RaiseGameEvent(BonusCollected, $"Собран бонус: {bonus.GetType().Name}", bonus);
                         RenderBonusObjects();
                         UpdateUI();
                         break;
@@ -361,6 +405,9 @@ namespace Game
             }
 
             bonusObjects.Add(bonus);
+
+            // ГЕНЕРИРУЕМ СОБЫТИЕ ПОЯВЛЕНИЯ БОНУСА
+            RaiseGameEvent(BonusSpawned, $"Появился бонус: {bonus.GetType().Name}", bonus);
         }
 
         private void RenderBonusObjects()
@@ -380,7 +427,12 @@ namespace Game
                 double newCooldown = clickCooldownTimer.GetDuration() * 0.97;
                 clickCooldownTimer.SetDuration(newCooldown);
                 AddActionLog($"Ускорение атаки -3% ({newCooldown:F1} сек)");
-                UpdateUI(); // ← Обновит CooldownText с новым значением
+
+                // ГЕНЕРИРУЕМ СОБЫТИЕ АПГРЕЙДА СКОРОСТИ
+                RaiseGameEvent(PlayerUpgraded, $"Ускорение атаки: {newCooldown:F1} сек",
+                              new { Cooldown = newCooldown });
+
+                UpdateUI();
             }
             else
             {

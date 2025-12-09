@@ -13,10 +13,25 @@ namespace Game
 {
     public partial class MainWindow : Window
     {
+        public delegate void EditorEventHandler(object sender, EditorEventArgs e);
+
+        // СОБЫТИЯ редактора
+        public event EditorEventHandler IconSelected;      // Выбрана иконка
+        public event EditorEventHandler EnemyAdded;        // Добавлен враг
+        public event EditorEventHandler EnemyRemoved;      // Удалён враг
+        public event EditorEventHandler EnemySelected;     // Выбран враг из списка
+        public event EditorEventHandler ListSaved;         // Список сохранён
+        public event EditorEventHandler ListLoaded;        // Список загружен
+
         private EnemyTemplateList enemyList;
         private List<CIcon> icons;
         private CIcon selectedIcon;
         private string defaultIconsPath;
+
+        private void RaiseEditorEvent(EditorEventHandler handler, string message, object data = null)
+        {
+            handler?.Invoke(this, new EditorEventArgs(message, data));
+        }
 
         public MainWindow()
         {
@@ -34,25 +49,38 @@ namespace Game
             else
                 MessageBox.Show("Папка с иконками не найдена:\n" + defaultIconsPath);
 
-            // Выбираем первый тип врага по умолчанию
             EnemyTypeComboBox.SelectedIndex = 0;
-            UpdateTypeSpecificPanel("Normal"); // Инициализируем панель
+            UpdateTypeSpecificPanel("Normal");
 
-            // Подписываемся на событие изменения типа
             EnemyTypeComboBox.SelectionChanged += EnemyTypeComboBox_SelectionChanged;
             EnemiesListBox.SelectionChanged += EnemiesListBox_SelectionChanged;
 
-            // Устанавливаем значения по умолчанию
             SetDefaultValues();
+
+            // ПОДПИСКА НА СОБЫТИЯ РЕДАКТОРА
+            IconSelected += OnEditorEvent;
+            EnemyAdded += OnEditorEvent;
+            EnemyRemoved += OnEditorEvent;
+            EnemySelected += OnEditorEvent;
+            ListSaved += OnEditorEvent;
+            ListLoaded += OnEditorEvent;
+        }
+
+        // ОБРАБОТЧИК СОБЫТИЙ РЕДАКТОРА
+        private void OnEditorEvent(object sender, EditorEventArgs e)
+        {
+            // Выводим информацию о событии в консоль (или можно в лог)
+            Console.WriteLine($"[{e.Timestamp:HH:mm:ss}] {e.Message}");
+            // Или можно добавить в какой-нибудь Debug-лог на форме
         }
 
         private void SetDefaultValues()
         {
-            BaseLifeBox.Text = "";
-            LifeModifierBox.Text = "";
-            BaseGoldBox.Text = "";
-            GoldModifierBox.Text = "";
-            SpawnChanceBox.Text = "";
+            BaseLifeBox.Text = "100";
+            LifeModifierBox.Text = "1";
+            BaseGoldBox.Text = "10";
+            GoldModifierBox.Text = "1";
+            SpawnChanceBox.Text = "10";
         }
 
         // Обработчик изменения типа врага
@@ -126,6 +154,9 @@ namespace Game
                 selectedIcon = icon;
                 SelectedEnemyIcon.Source = new BitmapImage(new Uri(icon.ImagePath, UriKind.Absolute));
                 IconNameBox.Text = icon.Name;
+
+                // ГЕНЕРИРУЕМ СОБЫТИЕ
+                RaiseEditorEvent(IconSelected, $"Выбрана иконка: {icon.Name}", icon);
             }
         }
 
@@ -290,6 +321,10 @@ namespace Game
                 UpdateEnemyListBox();
                 ClearFields();
                 MessageBox.Show($"Враг '{enemyName}' добавлен как тип '{enemyType}'");
+
+                // ГЕНЕРИРУЕМ СОБЫТИЕ ПОСЛЕ УСПЕШНОГО ДОБАВЛЕНИЯ
+                var addedEnemy = enemyList.FindByName(enemyName);
+                RaiseEditorEvent(EnemyAdded, $"Добавлен враг: {enemyName} (тип: {enemyType})", addedEnemy);
             }
             catch (InvalidOperationException ex)
             {
@@ -312,6 +347,9 @@ namespace Game
             string name = EnemiesListBox.SelectedItem.ToString();
             enemyList.DeleteEnemyByName(name);
             UpdateEnemyListBox();
+
+            // ГЕНЕРИРУЕМ СОБЫТИЕ
+            RaiseEditorEvent(EnemyRemoved, $"Удалён враг: {name}", name);
         }
 
         private void SaveEnemies_Click(object sender, RoutedEventArgs e)
@@ -327,6 +365,9 @@ namespace Game
             {
                 enemyList.SaveToJson(dlg.FileName);
                 MessageBox.Show("Список врагов сохранён успешно.");
+
+                // ГЕНЕРИРУЕМ СОБЫТИЕ
+                RaiseEditorEvent(ListSaved, $"Список сохранён в: {dlg.FileName}", dlg.FileName);
             }
         }
 
@@ -343,6 +384,9 @@ namespace Game
                 enemyList.LoadFromJson(dlg.FileName);
                 UpdateEnemyListBox();
                 MessageBox.Show("Список врагов загружен успешно.");
+
+                // ГЕНЕРИРУЕМ СОБЫТИЕ
+                RaiseEditorEvent(ListLoaded, $"Список загружен из: {dlg.FileName}", dlg.FileName);
             }
         }
 
@@ -374,10 +418,10 @@ namespace Game
             EnemyNameBox.Text = enemy.Name;
             IconNameBox.Text = enemy.IconName;
             BaseLifeBox.Text = enemy.BaseLife.ToString();
-            LifeModifierBox.Text = enemy.LifeModifier.ToString(); // Теперь int, нет дробной части
+            LifeModifierBox.Text = enemy.LifeModifier.ToString();
             BaseGoldBox.Text = enemy.BaseGold.ToString();
-            GoldModifierBox.Text = enemy.GoldModifier.ToString(); // Теперь int
-            SpawnChanceBox.Text = enemy.SpawnChance.ToString();   // Теперь int
+            GoldModifierBox.Text = enemy.GoldModifier.ToString();
+            SpawnChanceBox.Text = enemy.SpawnChance.ToString();
 
             // Определяем тип врага и показываем специальные параметры
             if (enemy is CArmoredEnemyTemplate armored)
@@ -386,7 +430,7 @@ namespace Game
                 TypeParamBox.Text = armored.Armor.ToString();
                 TypeSpecificPanel.Visibility = Visibility.Visible;
             }
-            else if (enemy is CDodgingEnemyTemplate dodging) // Было: CShrinkingEnemyTemplate
+            else if (enemy is CDodgingEnemyTemplate dodging)
             {
                 EnemyTypeComboBox.SelectedIndex = 2; // Уворачивающийся
                 TypeParamBox.Text = dodging.DodgeChance.ToString();
@@ -417,7 +461,11 @@ namespace Game
                 SelectedEnemyIcon.Source = null;
                 selectedIcon = null;
             }
+
+            // ГЕНЕРИРУЕМ СОБЫТИЕ ВЫБОРА ВРАГА
+            RaiseEditorEvent(EnemySelected, $"Выбран враг: {enemy.Name}", enemy);
         }
+
         private void StartBattleButton_Click(object sender, RoutedEventArgs e)
         {
             if (enemyList.GetListOfEnemyNames().Count == 0)
@@ -452,7 +500,7 @@ namespace Game
 
         private void EnemyNameBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-
+            // Обработчик изменения текста в поле имени врага
         }
     }
 }
