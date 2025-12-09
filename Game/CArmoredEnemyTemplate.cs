@@ -23,8 +23,8 @@ namespace Game
             armor = 25;
         }
 
-        public CArmoredEnemyTemplate(string name, string iconName, int baseLife, double lifeModifier,
-                                    int baseGold, double goldModifier, double spawnChance, double armor)
+        public CArmoredEnemyTemplate(string name, string iconName, int baseLife, int lifeModifier, // int
+                                    int baseGold, int goldModifier, int spawnChance, double armor) // int
             : base(name, iconName, baseLife, lifeModifier, baseGold, goldModifier, spawnChance)
         {
             Armor = armor;

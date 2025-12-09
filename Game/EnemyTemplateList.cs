@@ -18,8 +18,8 @@ namespace Game
         }
 
         // Добавление обычного врага
-        public void AddNormalEnemy(string name, string icon, int baseLife, double lifeModifier,
-                                  int baseGold, double goldModifier, double spawnChance)
+        public void AddNormalEnemy(string name, string icon, int baseLife, int lifeModifier,
+                          int baseGold, int goldModifier, int spawnChance) 
         {
             if (enemies.Any(e => e.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
                 throw new InvalidOperationException($"Враг с именем '{name}' уже существует!");
@@ -29,8 +29,8 @@ namespace Game
         }
 
         // Добавление бронированного врага
-        public void AddArmoredEnemy(string name, string icon, int baseLife, double lifeModifier,
-                                   int baseGold, double goldModifier, double spawnChance, double armor)
+        public void AddArmoredEnemy(string name, string icon, int baseLife, int lifeModifier,
+                           int baseGold, int goldModifier, int spawnChance, double armor)
         {
             if (enemies.Any(e => e.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
                 throw new InvalidOperationException($"Враг с именем '{name}' уже существует!");
@@ -39,21 +39,21 @@ namespace Game
                                                  baseGold, goldModifier, spawnChance, armor));
         }
 
-        // Добавление укорачивающегося врага
-        public void AddShrinkingEnemy(string name, string icon, int baseLife, double lifeModifier,
-                                     int baseGold, double goldModifier, double spawnChance, double shrinkFactor)
+        // Добавление уворачивающегося врага
+        public void AddDodgingEnemy(string name, string icon, int baseLife, int lifeModifier,
+                           int baseGold, int goldModifier, int spawnChance, double dodgeChance)
         {
             if (enemies.Any(e => e.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
                 throw new InvalidOperationException($"Враг с именем '{name}' уже существует!");
 
-            enemies.Add(new CShrinkingEnemyTemplate(name, icon, baseLife, lifeModifier,
-                                                   baseGold, goldModifier, spawnChance, shrinkFactor));
+            enemies.Add(new CDodgingEnemyTemplate(name, icon, baseLife, lifeModifier,
+                                                 baseGold, goldModifier, spawnChance, dodgeChance));
         }
 
         // Добавление исцеляющегося врага
-        public void AddHealingEnemy(string name, string icon, int baseLife, double lifeModifier,
-                                   int baseGold, double goldModifier, double spawnChance,
-                                   double healChance, double healPercentage)
+        public void AddHealingEnemy(string name, string icon, int baseLife, int lifeModifier,
+                           int baseGold, int goldModifier, int spawnChance,
+                           double healChance, double healPercentage)
         {
             if (enemies.Any(e => e.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
                 throw new InvalidOperationException($"Враг с именем '{name}' уже существует!");

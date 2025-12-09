@@ -21,8 +21,8 @@ namespace Game
                     case "CNormalEnemyTemplate":
                         return JsonSerializer.Deserialize<CNormalEnemyTemplate>(jsonDoc.RootElement.GetRawText(), options);
 
-                    case "CShrinkingEnemyTemplate":
-                        return JsonSerializer.Deserialize<CShrinkingEnemyTemplate>(jsonDoc.RootElement.GetRawText(), options);
+                    case "CDodgingEnemyTemplate":
+                        return JsonSerializer.Deserialize<CDodgingEnemyTemplate>(jsonDoc.RootElement.GetRawText(), options);
 
                     case "CHealingEnemyTemplate":
                         return JsonSerializer.Deserialize<CHealingEnemyTemplate>(jsonDoc.RootElement.GetRawText(), options);

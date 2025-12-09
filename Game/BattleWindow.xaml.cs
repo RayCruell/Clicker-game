@@ -59,13 +59,7 @@ namespace Game
                             enemyIcon = new CIcon(ic.GetIconWidth(), ic.GetIconHeight(), ic.ImagePath);
                         }
                     }
-
-                    var enemy = new CEnemy(
-                        template.Name,
-                        new BigNumber(template.BaseLife.ToString()),
-                        new BigNumber(template.BaseGold.ToString()),
-                        enemyIcon
-                    );
+                    var enemy = CreateEnemyFromTemplate(template, enemyIcon);
                     allEnemies.Add(enemy);
                 }
             }
@@ -111,8 +105,8 @@ namespace Game
             if (currentEnemy != null)
             {
                 EnemyNameText.Text = currentEnemy.Name;
-                EnemyHPText.Text = $"{currentEnemy.CurrentHitPoints} / {currentEnemy.MaxHitPoints}";
-                EnemyGoldText.Text = currentEnemy.GoldReward.ToString();
+                EnemyHPText.Text = $"{currentEnemy.CurrentHitPoints} / {currentEnemy.MaxHitPoints}"; // Используем CurrentHitPoints и MaxHitPoints
+                EnemyGoldText.Text = currentEnemy.GoldReward.ToString(); // Используем GoldReward
 
                 if (currentEnemy.Icon != null && File.Exists((string)currentEnemy.Icon.ImagePath))
                 {
@@ -202,11 +196,17 @@ namespace Game
             if (currentEnemy == null) return;
 
             var dmg = player.DealDamage();
-            if (currentEnemy.TakeDamage(dmg, out BigNumber reward))
+
+            // Вызываем TakeDamage с получением лога
+            bool isDead = currentEnemy.TakeDamage(dmg, out BigNumber reward, out string combatLog);
+
+            // Выводим лог в интерфейс
+            AddActionLog(combatLog);
+
+            if (isDead)
             {
                 RemoveDefeatedEnemy(currentEnemy.Name);
                 player.AddGold(reward);
-                AddActionLog($"Убит {currentEnemy.Name}! +{reward} золота");
 
                 if (enemies.Count == 0)
                 {
@@ -220,7 +220,7 @@ namespace Game
             }
 
             clickCooldownTimer.Start(2.0);
-            UpdateUI(); // Обновляем UI - покажет новое значение если перезарядка изменилась
+            UpdateUI();
         }
 
         private void ClearBattleInterface() //Убираем после пройденного списка всех врагов
@@ -260,8 +260,13 @@ namespace Game
                     {
                         BigNumber bonusDamage = bonus.GetDamageValue(player);
 
-                        if (currentEnemy.TakeDamage(bonusDamage, out BigNumber reward))
+                        // ОБНОВЛЯЕМ ЭТУ СТРОКУ:
+                        // Было: if (currentEnemy.TakeDamage(bonusDamage, out BigNumber reward))
+                        // Стало:
+                        if (currentEnemy.TakeDamage(bonusDamage, out BigNumber reward, out string combatLog))
                         {
+                            AddActionLog($"Бонус: {combatLog}");
+
                             RemoveDefeatedEnemy(currentEnemy.Name);
                             player.AddGold(reward);
                             AddActionLog($"Бонус убил врага! +{reward} золота");
@@ -278,32 +283,32 @@ namespace Game
                         }
                         else
                         {
-                            AddActionLog($"Бонус нанес {bonusDamage} урона");
+                            AddActionLog($"Бонус: {combatLog}");
                         }
-                    }
 
-                    // ДАЁМ БОНУС ИГРОКУ
-                    if (bonus is CDamageBooster damageBooster)
-                    {
-                        player.Damage = player.Damage * damageBooster.GetDamageMultiplier();
-                        AddActionLog($"Урон увеличен на 20%! Теперь: {player.Damage}");
-                    }
-                    else if (bonus is CCooldownReducer cooldownReducer)
-                    {
-                        double newCooldown = clickCooldownTimer.GetDuration() * cooldownReducer.GetCooldownReduction();
-                        clickCooldownTimer.SetDuration(newCooldown);
-                        AddActionLog($"Перезарядка ({newCooldown:F1} сек)");
-                    }
-                    else if (bonus is CGoldGiver goldGiver)
-                    {
-                        player.AddGold(goldGiver.GetGoldAmount());
-                        AddActionLog($"+{goldGiver.GetGoldAmount()} золота");
-                    }
+                        // ДАЁМ БОНУС ИГРОКУ
+                        if (bonus is CDamageBooster damageBooster)
+                        {
+                            player.Damage = player.Damage * damageBooster.GetDamageMultiplier();
+                            AddActionLog($"Урон увеличен на 20%! Теперь: {player.Damage}");
+                        }
+                        else if (bonus is CCooldownReducer cooldownReducer)
+                        {
+                            double newCooldown = clickCooldownTimer.GetDuration() * cooldownReducer.GetCooldownReduction();
+                            clickCooldownTimer.SetDuration(newCooldown);
+                            AddActionLog($"Перезарядка ({newCooldown:F1} сек)");
+                        }
+                        else if (bonus is CGoldGiver goldGiver)
+                        {
+                            player.AddGold(goldGiver.GetGoldAmount());
+                            AddActionLog($"+{goldGiver.GetGoldAmount()} золота");
+                        }
 
-                    bonusObjects.Remove(bonus);
-                    RenderBonusObjects();
-                    UpdateUI();
-                    break;
+                        bonusObjects.Remove(bonus);
+                        RenderBonusObjects();
+                        UpdateUI();
+                        break;
+                    }
                 }
             }
         }
@@ -394,6 +399,58 @@ namespace Game
             if (lines.Length > 10)
             {
                 ActionLogText.Text = string.Join("\n", lines.Take(10));
+            }
+        }
+
+        private CEnemy CreateEnemyFromTemplate(CEnemyTemplate template, CIcon icon)
+        {
+            BigNumber baseLife = new BigNumber(template.BaseLife.ToString());
+            BigNumber baseGold = new BigNumber(template.BaseGold.ToString());
+
+            // Определяем тип врага по классу шаблона
+            if (template is CArmoredEnemyTemplate armored)
+            {
+                return new CEnemy(
+                    template.Name,
+                    baseLife,
+                    baseGold,
+                    "Armored",  // тип
+                    icon,
+                    armored.Armor  // параметр брони
+                );
+            }
+            else if (template is CDodgingEnemyTemplate dodging)
+            {
+                return new CEnemy(
+                    template.Name,
+                    baseLife,
+                    baseGold,
+                    "Dodging",  // тип
+                    icon,
+                    dodging.DodgeChance  // шанс уворота
+                );
+            }
+            else if (template is CHealingEnemyTemplate healing)
+            {
+                return new CEnemy(
+                    template.Name,
+                    baseLife,
+                    baseGold,
+                    "Healing",  // тип
+                    icon,
+                    healing.HealChance,    // шанс лечения
+                    healing.HealPercentage // процент лечения
+                );
+            }
+            else // Normal или любой другой
+            {
+                return new CEnemy(
+                    template.Name,
+                    baseLife,
+                    baseGold,
+                    "Normal",  // тип
+                    icon
+                );
             }
         }
     }

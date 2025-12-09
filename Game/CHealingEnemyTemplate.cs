@@ -30,11 +30,11 @@ namespace Game
         public CHealingEnemyTemplate() : base()
         {
             healChance = 25;
-            healPercentage = 30;
+            healPercentage = 30; // Фиксированный процент
         }
 
-        public CHealingEnemyTemplate(string name, string iconName, int baseLife, double lifeModifier,
-                                    int baseGold, double goldModifier, double spawnChance,
+        public CHealingEnemyTemplate(string name, string iconName, int baseLife, int lifeModifier, // int
+                                    int baseGold, int goldModifier, int spawnChance, // int
                                     double healChance, double healPercentage)
             : base(name, iconName, baseLife, lifeModifier, baseGold, goldModifier, spawnChance)
         {

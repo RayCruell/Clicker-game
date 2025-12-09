@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
+﻿using System.Text.Json.Serialization;
 
 namespace Game
 {
@@ -12,10 +7,10 @@ namespace Game
         private string name;
         private string iconName;
         private int baseLife;
-        private double lifeModifier;
+        private int lifeModifier;
         private int baseGold;
-        private double goldModifier;
-        private double spawnChance;
+        private int goldModifier;
+        private int spawnChance;
 
         [JsonInclude]
         public string Name
@@ -39,10 +34,10 @@ namespace Game
         }
 
         [JsonInclude]
-        public double LifeModifier
+        public int LifeModifier
         {
             get { return lifeModifier; }
-            set { if (value > 0) lifeModifier = value; else lifeModifier = 1.0; }
+            set { if (value > 0) lifeModifier = value; else lifeModifier = 1; } // изменено на int
         }
 
         [JsonInclude]
@@ -53,17 +48,17 @@ namespace Game
         }
 
         [JsonInclude]
-        public double GoldModifier
+        public int GoldModifier
         {
             get { return goldModifier; }
-            set { if (value > 0) goldModifier = value; else goldModifier = 1.0; }
+            set { if (value > 0) goldModifier = value; else goldModifier = 1; } // изменено на int
         }
 
         [JsonInclude]
-        public double SpawnChance
+        public int SpawnChance
         {
             get { return spawnChance; }
-            set { if (value >= 0 && value <= 100) spawnChance = value; else spawnChance = 10.0; }
+            set { if (value >= 0 && value <= 100) spawnChance = value; else spawnChance = 10; } // изменено на int
         }
 
         protected CEnemyTemplate()
@@ -71,14 +66,14 @@ namespace Game
             name = "Unknown";
             iconName = "";
             baseLife = 100;
-            lifeModifier = 1.0;
+            lifeModifier = 1; // int значение
             baseGold = 10;
-            goldModifier = 1.0;
-            spawnChance = 10.0;
+            goldModifier = 1; // int значение
+            spawnChance = 10; // int значение
         }
 
-        protected CEnemyTemplate(string name, string iconName, int baseLife, double lifeModifier,
-                               int baseGold, double goldModifier, double spawnChance)
+        protected CEnemyTemplate(string name, string iconName, int baseLife, int lifeModifier, // int параметры
+                               int baseGold, int goldModifier, int spawnChance) // int параметры
         {
             Name = name;
             IconName = iconName;

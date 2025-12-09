@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -37,9 +36,23 @@ namespace Game
 
             // Выбираем первый тип врага по умолчанию
             EnemyTypeComboBox.SelectedIndex = 0;
-            EnemyTypeComboBox_SelectionChanged(null, null); // Инициализируем панель
+            UpdateTypeSpecificPanel("Normal"); // Инициализируем панель
 
+            // Подписываемся на событие изменения типа
+            EnemyTypeComboBox.SelectionChanged += EnemyTypeComboBox_SelectionChanged;
             EnemiesListBox.SelectionChanged += EnemiesListBox_SelectionChanged;
+
+            // Устанавливаем значения по умолчанию
+            SetDefaultValues();
+        }
+
+        private void SetDefaultValues()
+        {
+            BaseLifeBox.Text = "";
+            LifeModifierBox.Text = "";
+            BaseGoldBox.Text = "";
+            GoldModifierBox.Text = "";
+            SpawnChanceBox.Text = "";
         }
 
         // Обработчик изменения типа врага
@@ -49,28 +62,32 @@ namespace Game
 
             var selectedItem = (ComboBoxItem)EnemyTypeComboBox.SelectedItem;
             string enemyType = selectedItem.Tag.ToString();
+            UpdateTypeSpecificPanel(enemyType);
+        }
 
+        private void UpdateTypeSpecificPanel(string enemyType)
+        {
             switch (enemyType)
             {
                 case "Armored":
                     TypeSpecificPanel.Visibility = Visibility.Visible;
-                    TypeParamLabel.Text = "Armor value:";
+                    TypeParamLabel.Text = "Броня:";
                     TypeParamBox.Text = "25";
-                    TypeParamBox.ToolTip = "Значение брони (например, 25)";
+                    TypeParamBox.ToolTip = "Значение брони (например: 25)";
                     break;
 
-                case "Shrinking":
+                case "Dodging":
                     TypeSpecificPanel.Visibility = Visibility.Visible;
-                    TypeParamLabel.Text = "Shrink factor:";
-                    TypeParamBox.Text = "0.7";
-                    TypeParamBox.ToolTip = "Коэффициент уменьшения (0.1-0.9)";
+                    TypeParamLabel.Text = "Шанс уворота %:";
+                    TypeParamBox.Text = "25";
+                    TypeParamBox.ToolTip = "Шанс уворота (1-100)";
                     break;
 
                 case "Healing":
                     TypeSpecificPanel.Visibility = Visibility.Visible;
-                    TypeParamLabel.Text = "Heal chance %:";
+                    TypeParamLabel.Text = "Лечение (шанс,процент):";
                     TypeParamBox.Text = "25,30";
-                    TypeParamBox.ToolTip = "Шанс лечения (1-100) и процент лечения через запятую (например: 25,30)";
+                    TypeParamBox.ToolTip = "Шанс лечения и процент через запятую (например: 25,50)";
                     break;
 
                 default: // Normal
@@ -118,6 +135,13 @@ namespace Game
             {
                 string enemyName = EnemyNameBox.Text.Trim();
                 string iconName = IconNameBox.Text.Trim();
+
+                if (EnemyTypeComboBox.SelectedItem == null)
+                {
+                    MessageBox.Show("Выберите тип врага!");
+                    return;
+                }
+
                 string enemyType = ((ComboBoxItem)EnemyTypeComboBox.SelectedItem).Tag.ToString();
 
                 if (string.IsNullOrWhiteSpace(enemyName))
@@ -132,11 +156,7 @@ namespace Game
                     return;
                 }
 
-                // Используем CultureInfo.InvariantCulture для парсинга с точкой
-                // Или CultureInfo.CurrentCulture для запятой (русская локаль)
-                var culture = System.Globalization.CultureInfo.CurrentCulture; // Для запятой
-
-                // Проверяем и парсим основные параметры
+                // Парсим основные параметры
                 if (!int.TryParse(BaseLifeBox.Text, out int baseLife))
                 {
                     MessageBox.Show("Некорректное значение здоровья!");
@@ -144,11 +164,9 @@ namespace Game
                     return;
                 }
 
-                // Для дробных чисел используем правильный парсинг
-                if (!double.TryParse(LifeModifierBox.Text.Replace('.', ','), System.Globalization.NumberStyles.Any,
-                                    System.Globalization.CultureInfo.InvariantCulture, out double lifeModifier))
+                if (!int.TryParse(LifeModifierBox.Text, out int lifeModifier))
                 {
-                    MessageBox.Show($"Некорректный модификатор здоровья! Введите число (например: 1,5 или 1.5)");
+                    MessageBox.Show("Модификатор здоровья должен быть целым числом!");
                     LifeModifierBox.Focus();
                     return;
                 }
@@ -160,18 +178,16 @@ namespace Game
                     return;
                 }
 
-                if (!double.TryParse(GoldModifierBox.Text.Replace('.', ','), System.Globalization.NumberStyles.Any,
-                                    System.Globalization.CultureInfo.InvariantCulture, out double goldModifier))
+                if (!int.TryParse(GoldModifierBox.Text, out int goldModifier))
                 {
-                    MessageBox.Show($"Некорректный модификатор золота! Введите число (например: 1,2 или 1.2)");
+                    MessageBox.Show("Модификатор золота должен быть целым числом!");
                     GoldModifierBox.Focus();
                     return;
                 }
 
-                if (!double.TryParse(SpawnChanceBox.Text.Replace('.', ','), System.Globalization.NumberStyles.Any,
-                                    System.Globalization.CultureInfo.InvariantCulture, out double spawnChance))
+                if (!int.TryParse(SpawnChanceBox.Text, out int spawnChance))
                 {
-                    MessageBox.Show($"Некорректный шанс появления! Введите число (например: 10,5 или 10.5)");
+                    MessageBox.Show("Шанс появления должен быть целым числом!");
                     SpawnChanceBox.Focus();
                     return;
                 }
@@ -203,7 +219,7 @@ namespace Game
                         if (!double.TryParse(TypeParamBox.Text.Replace('.', ','), System.Globalization.NumberStyles.Any,
                                             System.Globalization.CultureInfo.InvariantCulture, out double armor))
                         {
-                            MessageBox.Show($"Некорректное значение брони! Введите число (например: 25,5 или 25.5)");
+                            MessageBox.Show("Некорректное значение брони!");
                             TypeParamBox.Focus();
                             return;
                         }
@@ -211,44 +227,42 @@ namespace Game
                                                  baseGold, goldModifier, spawnChance, armor);
                         break;
 
-                    case "Shrinking":
+                    case "Dodging":
                         if (!double.TryParse(TypeParamBox.Text.Replace('.', ','), System.Globalization.NumberStyles.Any,
-                                            System.Globalization.CultureInfo.InvariantCulture, out double shrinkFactor))
+                                            System.Globalization.CultureInfo.InvariantCulture, out double dodgeChance))
                         {
-                            MessageBox.Show($"Некорректный коэффициент уменьшения! Введите число (например: 0,7 или 0.7)");
+                            MessageBox.Show("Некорректный шанс уворота!");
                             TypeParamBox.Focus();
                             return;
                         }
-                        if (shrinkFactor <= 0 || shrinkFactor >= 1)
+                        if (dodgeChance < 0 || dodgeChance > 100)
                         {
-                            MessageBox.Show("Коэффициент уменьшения должен быть между 0 и 1!");
+                            MessageBox.Show("Шанс уворота должен быть от 0 до 100!");
                             TypeParamBox.Focus();
                             return;
                         }
-                        enemyList.AddShrinkingEnemy(enemyName, iconName, baseLife, lifeModifier,
-                                                   baseGold, goldModifier, spawnChance, shrinkFactor);
+                        enemyList.AddDodgingEnemy(enemyName, iconName, baseLife, lifeModifier,
+                                                 baseGold, goldModifier, spawnChance, dodgeChance);
                         break;
 
                     case "Healing":
                         string[] healParams = TypeParamBox.Text.Split(',');
 
-                        // Первый параметр - шанс лечения
-                        if (!double.TryParse(healParams[0].Trim().Replace('.', ','), System.Globalization.NumberStyles.Any,
-                                            System.Globalization.CultureInfo.InvariantCulture, out double healChance))
+                        // Парсим шанс лечения (первое число)
+                        if (!int.TryParse(healParams[0].Trim(), out int healChance))
                         {
-                            MessageBox.Show($"Некорректный шанс лечения! Введите число (например: 25 или 25,5)");
+                            MessageBox.Show("Некорректный шанс лечения! Введите число (например: 25)");
                             TypeParamBox.Focus();
                             return;
                         }
 
-                        // Второй параметр - процент лечения (опциональный)
-                        double healPercentage = 30;
+                        // Парсим процент лечения (второе число, по умолчанию 30)
+                        int healPercentage = 30;
                         if (healParams.Length > 1)
                         {
-                            if (!double.TryParse(healParams[1].Trim().Replace('.', ','), System.Globalization.NumberStyles.Any,
-                                                System.Globalization.CultureInfo.InvariantCulture, out healPercentage))
+                            if (!int.TryParse(healParams[1].Trim(), out healPercentage))
                             {
-                                MessageBox.Show($"Некорректный процент лечения! Введите число (например: 30 или 30,5)");
+                                MessageBox.Show("Некорректный процент лечения! Введите число (например: 30)");
                                 TypeParamBox.Focus();
                                 return;
                             }
@@ -257,6 +271,13 @@ namespace Game
                         if (healChance < 0 || healChance > 100)
                         {
                             MessageBox.Show("Шанс лечения должен быть от 0 до 100!");
+                            TypeParamBox.Focus();
+                            return;
+                        }
+
+                        if (healPercentage < 0 || healPercentage > 100)
+                        {
+                            MessageBox.Show("Процент лечения должен быть от 0 до 100!");
                             TypeParamBox.Focus();
                             return;
                         }
@@ -270,56 +291,13 @@ namespace Game
                 ClearFields();
                 MessageBox.Show($"Враг '{enemyName}' добавлен как тип '{enemyType}'");
             }
-            catch (Exception ex) when (ex is InvalidOperationException || ex is FormatException)
+            catch (InvalidOperationException ex)
             {
                 MessageBox.Show($"Ошибка: {ex.Message}");
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Неожиданная ошибка: {ex.Message}");
-            }
-        }
-        // Вспомогательные методы для добавления новых типов врагов
-        private void AddShrinkingEnemy(string name, string icon, int baseLife, double lifeModifier,
-                                      int baseGold, double goldModifier, double spawnChance, double shrinkFactor)
-        {
-            if (enemyList.GetListOfEnemyNames().Any(n => n.Equals(name, StringComparison.OrdinalIgnoreCase)))
-            {
-                throw new InvalidOperationException($"Враг с именем '{name}' уже существует!");
-            }
-
-            // Временное решение - используем рефлексию для доступа к приватному списку
-            var enemy = new CShrinkingEnemyTemplate(name, icon, baseLife, lifeModifier,
-                                                   baseGold, goldModifier, spawnChance, shrinkFactor);
-
-            // Получаем доступ к приватному списку через рефлексию
-            var enemiesField = typeof(EnemyTemplateList).GetField("enemies", BindingFlags.NonPublic | BindingFlags.Instance);
-            if (enemiesField != null)
-            {
-                var enemiesList = (List<CEnemyTemplate>)enemiesField.GetValue(enemyList);
-                enemiesList.Add(enemy);
-            }
-        }
-
-        private void AddHealingEnemy(string name, string icon, int baseLife, double lifeModifier,
-                                    int baseGold, double goldModifier, double spawnChance,
-                                    double healChance, double healPercentage)
-        {
-            if (enemyList.GetListOfEnemyNames().Any(n => n.Equals(name, StringComparison.OrdinalIgnoreCase)))
-            {
-                throw new InvalidOperationException($"Враг с именем '{name}' уже существует!");
-            }
-
-            var enemy = new CHealingEnemyTemplate(name, icon, baseLife, lifeModifier,
-                                                 baseGold, goldModifier, spawnChance,
-                                                 healChance, healPercentage);
-
-            // Получаем доступ к приватному списку через рефлексию
-            var enemiesField = typeof(EnemyTemplateList).GetField("enemies", BindingFlags.NonPublic | BindingFlags.Instance);
-            if (enemiesField != null)
-            {
-                var enemiesList = (List<CEnemyTemplate>)enemiesField.GetValue(enemyList);
-                enemiesList.Add(enemy);
             }
         }
 
@@ -377,13 +355,12 @@ namespace Game
         private void ClearFields()
         {
             EnemyNameBox.Text = "";
-            BaseLifeBox.Text = "";
-            LifeModifierBox.Text = ""; // Запятая вместо точки!
-            BaseGoldBox.Text = "";
-            GoldModifierBox.Text = ""; // Запятая вместо точки!
-            SpawnChanceBox.Text = ""; // Запятая вместо точки!
-            TypeParamBox.Text = "";
+            IconNameBox.Text = "";
+            SelectedEnemyIcon.Source = null;
+            selectedIcon = null;
+            SetDefaultValues();
             EnemyTypeComboBox.SelectedIndex = 0;
+            TypeParamBox.Text = "";
         }
 
         private void EnemiesListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -397,10 +374,10 @@ namespace Game
             EnemyNameBox.Text = enemy.Name;
             IconNameBox.Text = enemy.IconName;
             BaseLifeBox.Text = enemy.BaseLife.ToString();
-            LifeModifierBox.Text = enemy.LifeModifier.ToString();
+            LifeModifierBox.Text = enemy.LifeModifier.ToString(); // Теперь int, нет дробной части
             BaseGoldBox.Text = enemy.BaseGold.ToString();
-            GoldModifierBox.Text = enemy.GoldModifier.ToString();
-            SpawnChanceBox.Text = enemy.SpawnChance.ToString();
+            GoldModifierBox.Text = enemy.GoldModifier.ToString(); // Теперь int
+            SpawnChanceBox.Text = enemy.SpawnChance.ToString();   // Теперь int
 
             // Определяем тип врага и показываем специальные параметры
             if (enemy is CArmoredEnemyTemplate armored)
@@ -409,10 +386,10 @@ namespace Game
                 TypeParamBox.Text = armored.Armor.ToString();
                 TypeSpecificPanel.Visibility = Visibility.Visible;
             }
-            else if (enemy is CShrinkingEnemyTemplate shrinking)
+            else if (enemy is CDodgingEnemyTemplate dodging) // Было: CShrinkingEnemyTemplate
             {
-                EnemyTypeComboBox.SelectedIndex = 2; // Shrinking
-                TypeParamBox.Text = shrinking.ShrinkFactor.ToString();
+                EnemyTypeComboBox.SelectedIndex = 2; // Уворачивающийся
+                TypeParamBox.Text = dodging.DodgeChance.ToString();
                 TypeSpecificPanel.Visibility = Visibility.Visible;
             }
             else if (enemy is CHealingEnemyTemplate healing)
@@ -427,13 +404,20 @@ namespace Game
                 TypeSpecificPanel.Visibility = Visibility.Collapsed;
             }
 
+            // Загружаем иконку
             string iconPath = System.IO.Path.Combine(defaultIconsPath, enemy.IconName + ".png");
             if (File.Exists(iconPath))
+            {
                 SelectedEnemyIcon.Source = new BitmapImage(new Uri(iconPath, UriKind.Absolute));
+                // Находим соответствующую иконку в списке
+                selectedIcon = icons.FirstOrDefault(i => i.Name == enemy.IconName);
+            }
             else
+            {
                 SelectedEnemyIcon.Source = null;
+                selectedIcon = null;
+            }
         }
-
         private void StartBattleButton_Click(object sender, RoutedEventArgs e)
         {
             if (enemyList.GetListOfEnemyNames().Count == 0)
@@ -457,12 +441,16 @@ namespace Game
             {
                 CIcon newIcon = new CIcon(64, 64, cicon.ImagePath);
                 iconList.GetIcons().Add(newIcon);
-                Debug.WriteLine($"Добавлена иконка в iconList: {newIcon.GetName()} -> {newIcon.ImagePath}");
             }
             return iconList;
         }
 
         private void Window_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            // Обработка клика мыши в окне
+        }
+
+        private void EnemyNameBox_TextChanged(object sender, TextChangedEventArgs e)
         {
 
         }
